@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Tower Defense Mobile Ready - Fixed</title>
+<title>Tower Defense Full Game</title>
 <style>
   html, body {
     margin:0; padding:0; overflow:hidden;
@@ -121,9 +121,9 @@
     position: absolute;
     bottom: 100px;
     left: 20px;
-    width: 120px;
-    height: 120px;
-    background: rgba(255, 255, 255, 0.1);
+    width: 140px;
+    height: 140px;
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 50%;
     touch-action: none;
     z-index: 60;
@@ -131,8 +131,8 @@
   }
   #joystickKnob {
     position: absolute;
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     background: #ff7e5f;
     border-radius: 50%;
     top: 30px;
@@ -143,13 +143,13 @@
     position: absolute;
     bottom: 100px;
     right: 30px;
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     background: #ff7e5f;
     border-radius: 50%;
     text-align: center;
-    line-height: 80px;
-    font-size: 24px;
+    line-height: 100px;
+    font-size: 28px;
     font-weight: bold;
     cursor: pointer;
     user-select: none;
@@ -160,7 +160,7 @@
 <body>
 
 <div id="menu">
-  <h1>Tower Defense Mobile</h1>
+  <h1>Tower Defense Full Game</h1>
   <button id="startBtn">Play</button>
 </div>
 
@@ -175,10 +175,8 @@
   <div id="upgradePanel">
     Trap Damage: <span id="trapDmg">1</span>
     <button id="upgradeTrapBtn">Upgrade Trap (Cost: 50 Gold)</button>
-    <div class="tooltip">Increase damage of all arrow traps</div>
     <br/>
     <button id="toggleTrapTypeBtn" title="Switch trap type">Current Trap: Arrow</button>
-    <div class="tooltip">Toggle between Arrow Trap and Mine Trap</div>
   </div>
 </div>
 
@@ -195,7 +193,6 @@
   <div id="joystickKnob"></div>
 </div>
 <div id="shootButton" style="display:none;">Shoot</div>
-
 <script>
 (() => {
   const canvas = document.getElementById("gameCanvas");
@@ -272,29 +269,58 @@
 
   let spawning = false; // controls if currently spawning wave
 
-  // Path points for enemies to follow (simple waypoints forming a maze-like path)
-  const pathPoints = [
-    {x: 1200, y: 350},
-    {x: 900, y: 350},
-    {x: 900, y: 150},
-    {x: 700, y: 150},
-    {x: 700, y: 550},
-    {x: 500, y: 550},
-    {x: 500, y: 250},
-    {x: 300, y: 250},
-    {x: 300, y: 450},
-    {x: 50, y: 450}, // Near base
-  ];
+  // Paths for levels (Level 1 and 2)
+  const paths = {
+    1: [
+      {x: 1200, y: 350},
+      {x: 900, y: 350},
+      {x: 900, y: 150},
+      {x: 700, y: 150},
+      {x: 700, y: 550},
+      {x: 500, y: 550},
+      {x: 500, y: 250},
+      {x: 300, y: 250},
+      {x: 300, y: 450},
+      {x: 50, y: 450},
+    ],
+    2: [
+      {x: 1200, y: 400},
+      {x: 1000, y: 400},
+      {x: 1000, y: 200},
+      {x: 700, y: 200},
+      {x: 700, y: 500},
+      {x: 400, y: 500},
+      {x: 400, y: 300},
+      {x: 100, y: 300},
+      {x: 100, y: 400},
+      {x: 50, y: 400},
+    ]
+  };
 
-  // Valid tower spots where player can place traps
-  const validTowerSpots = [
-    {x: 820, y: 250, width: 40, height: 40},
-    {x: 650, y: 350, width: 40, height: 40},
-    {x: 450, y: 350, width: 40, height: 40},
-    {x: 350, y: 400, width: 40, height: 40},
-    {x: 600, y: 200, width: 40, height: 40},
-  ];
+  // Valid tower spots per level
+  const validTowerSpots = {
+    1: [
+      {x: 820, y: 250, width: 40, height: 40},
+      {x: 650, y: 350, width: 40, height: 40},
+      {x: 450, y: 350, width: 40, height: 40},
+      {x: 350, y: 400, width: 40, height: 40},
+      {x: 600, y: 200, width: 40, height: 40},
+    ],
+    2: [
+      {x: 950, y: 250, width: 40, height: 40},
+      {x: 800, y: 400, width: 40, height: 40},
+      {x: 650, y: 300, width: 40, height: 40},
+      {x: 450, y: 450, width: 40, height: 40},
+      {x: 300, y: 350, width: 40, height: 40},
+    ]
+  };
 
+  let currentLevel = 1;
+
+  // Trap types: "arrow" or "mine"
+  let currentTrapType = "arrow";
+
+  // ... devamı gelecek ...
   // Event listeners
   document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
   document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
@@ -305,8 +331,8 @@
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    // Check if clicked on valid tower spot
-    for(let spot of validTowerSpots){
+    // Check if clicked on valid tower spot for current level
+    for(let spot of validTowerSpots[currentLevel]){
       if(clickX >= spot.x && clickX <= spot.x + spot.width &&
          clickY >= spot.y && clickY <= spot.y + spot.height){
           if(gold >= 20){
@@ -386,6 +412,7 @@
     baseUpgradeBtn.title = `Upgrade Base HP (+20 HP, Cost: ${base.upgradeCost} Gold)`;
   }
 
+  // Update UI text
   function updateUI() {
     ui.gold.textContent = gold;
     ui.baseHp.textContent = base.hp + " / " + base.maxHp;
@@ -395,24 +422,7 @@
     updateBaseUpgradeBtn();
   }
 
-  // Enemy spawn at start of path
-  function spawnEnemy() {
-    enemies.push({
-      x: pathPoints[0].x,
-      y: pathPoints[0].y,
-      width: 30,
-      height: 30,
-      color: "red",
-      hp: 5 + waveNumber * 2,
-      speed: enemySpeedBase + waveNumber * enemySpeedIncreasePerWave,
-      damage: enemyBaseDamage,
-      pathIndex: 0,
-      targetX: pathPoints[1].x,
-      targetY: pathPoints[1].y
-    });
-  }
-
-  // Player movement (WASD or mobile)
+  // Player movement
   function movePlayer() {
     let moveX = 0;
     let moveY = 0;
@@ -434,8 +444,10 @@
     player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
   }
+  
+  // ... devamı gelecek ...
 
-  // Player shoots if cooldown or mobile shoot button pressed
+  // Player shoots at nearest enemy
   function shootAtNearestEnemy() {
     if (player.cooldown > 0) {
       player.cooldown--;
@@ -469,7 +481,7 @@
     }
   }
 
-  // Traps logic
+  // Update traps (arrows and mines)
   function updateTraps() {
     traps.forEach((trap, idx) => {
       if(trap.type === "arrow") {
@@ -477,7 +489,6 @@
           trap.shootCooldown--;
           return;
         }
-        // Find nearest enemy in range (150 px)
         let closest = null;
         let minDist = Infinity;
         enemies.forEach(e => {
@@ -532,7 +543,7 @@
     });
   }
 
-  // Bullets update
+  // Update bullets and check collisions
   function updateBullets() {
     for(let i=bullets.length-1; i>=0; i--) {
       let b = bullets[i];
@@ -562,22 +573,20 @@
     }
   }
 
-  // Enemies follow path
+  // Update enemies movement and attacks
   function updateEnemies() {
     for(let i=enemies.length-1; i>=0; i--) {
       let e = enemies[i];
+      let path = paths[currentLevel];
 
-      // Move towards next waypoint
-      let dx = e.targetX - e.x;
-      let dy = e.targetY - e.y;
+      let dx = path[e.pathIndex + 1].x - e.x;
+      let dy = path[e.pathIndex + 1].y - e.y;
       let dist = Math.sqrt(dx*dx + dy*dy);
       if(dist < e.speed){
-        // Arrived at waypoint, next waypoint
-        e.x = e.targetX;
-        e.y = e.targetY;
+        e.x = path[e.pathIndex + 1].x;
+        e.y = path[e.pathIndex + 1].y;
         e.pathIndex++;
-        if(e.pathIndex >= pathPoints.length - 1){
-          // Enemy reached base
+        if(e.pathIndex >= path.length - 1){
           base.hp -= e.damage;
           enemies.splice(i,1);
           updateUI();
@@ -587,14 +596,12 @@
           }
           continue;
         }
-        e.targetX = pathPoints[e.pathIndex + 1].x;
-        e.targetY = pathPoints[e.pathIndex + 1].y;
       } else {
         e.x += (dx / dist) * e.speed;
         e.y += (dy / dist) * e.speed;
       }
 
-      // Enemy attacks player if close
+      // Enemy attacks player if overlapping
       if (e.x < player.x + player.width &&
           e.x + e.width > player.x &&
           e.y < player.y + player.height &&
@@ -608,7 +615,7 @@
         continue;
       }
 
-      // Enemy attacks arrow traps if close
+      // Enemy attacks arrow traps if overlapping
       traps.forEach((trap, tIdx) => {
         if(trap.type === "arrow"){
           if(e.x < trap.x + trap.width &&
@@ -628,8 +635,15 @@
 
   // Drawing functions
   function drawBase() {
-    ctx.fillStyle = base.color;
-    ctx.fillRect(base.x, base.y, base.width, base.height);
+    // Draw base image or simple rectangle
+    if(baseImage.complete) {
+      ctx.drawImage(baseImage, base.x, base.y, base.width, base.height);
+    } else {
+      ctx.fillStyle = base.color;
+      ctx.fillRect(base.x, base.y, base.width, base.height);
+    }
+
+    // Base HP bar
     ctx.fillStyle = "black";
     ctx.fillRect(base.x, base.y - 10, base.width, 5);
     ctx.fillStyle = "limegreen";
@@ -639,8 +653,7 @@
   function drawPlayer() {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
-
-    // Draw player HP bar
+    // Player HP bar
     ctx.fillStyle = "black";
     ctx.fillRect(player.x, player.y - 8, player.width, 5);
     ctx.fillStyle = "cyan";
@@ -652,7 +665,6 @@
       if(t.type === "arrow"){
         ctx.fillStyle = "#ffcc00";
         ctx.fillRect(t.x, t.y, t.width, t.height);
-        // Arrow icon
         ctx.fillStyle = "black";
         ctx.beginPath();
         ctx.moveTo(t.x + t.width/2, t.y + 6);
@@ -660,8 +672,7 @@
         ctx.lineTo(t.x + t.width - 6, t.y + t.height - 6);
         ctx.closePath();
         ctx.fill();
-
-        // Trap HP bar
+        // HP bar
         ctx.fillStyle = "black";
         ctx.fillRect(t.x, t.y - 6, t.width, 4);
         ctx.fillStyle = "orange";
@@ -685,6 +696,7 @@
     enemies.forEach(e => {
       ctx.fillStyle = e.color;
       ctx.fillRect(e.x, e.y, e.width, e.height);
+      // HP bar
       ctx.fillStyle = "black";
       ctx.fillRect(e.x, e.y - 6, e.width, 4);
       ctx.fillStyle = "red";
@@ -701,26 +713,56 @@
     });
   }
 
-  // Draw path and valid tower spots
+  // Draw path and tower spots for current level
   function drawPathAndSpots() {
+    let path = paths[currentLevel];
     ctx.strokeStyle = "#666";
     ctx.lineWidth = 20;
     ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
-    for(let i=1; i<pathPoints.length; i++){
-      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    ctx.moveTo(path[0].x, path[0].y);
+    for(let i=1; i<path.length; i++){
+      ctx.lineTo(path[i].x, path[i].y);
     }
     ctx.stroke();
 
-    validTowerSpots.forEach(spot => {
+    validTowerSpots[currentLevel].forEach(spot => {
       ctx.fillStyle = "rgba(255,255,0,0.3)";
       ctx.fillRect(spot.x, spot.y, spot.width, spot.height);
       ctx.strokeStyle = "yellow";
       ctx.strokeRect(spot.x, spot.y, spot.width, spot.height);
     });
   }
+  
+  // ... devamı gelecek ...
+  // Spawn a single enemy at path start
+  function spawnEnemy() {
+    let path = paths[currentLevel];
+    enemies.push({
+      x: path[0].x,
+      y: path[0].y,
+      width: 30,
+      height: 30,
+      color: "red",
+      hp: 5 + waveNumber * 2,
+      speed: enemySpeedBase + waveNumber * enemySpeedIncreasePerWave,
+      damage: enemyBaseDamage,
+      pathIndex: 0,
+      targetX: path[1].x,
+      targetY: path[1].y
+    });
+  }
 
+  // Spawn wave of enemies based on current wave number
+  function spawnWave() {
+    let count = waveCounts[Math.min(waveNumber - 1, waveCounts.length - 1)];
+    for (let i = 0; i < count; i++) {
+      setTimeout(spawnEnemy, i * 700);
+    }
+    showWaveMessage("Wave " + waveNumber);
+  }
+
+  // Show wave message
   function showWaveMessage(text) {
     ui.waveMessage.style.display = "block";
     ui.waveMessage.textContent = text;
@@ -729,44 +771,22 @@
     }, 3000);
   }
 
-  function gameLoop(time=0) {
-    if (!gameRunning) return;
-
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    drawPathAndSpots();
-    movePlayer();
-    shootAtNearestEnemy();
-
-    updateTraps();
-    updateBullets();
-    updateEnemies();
-
-    drawBase();
-    drawPlayer();
-    drawTraps();
-    drawEnemies();
-    drawBullets();
-
-    updateUI();
-
-    if (!spawning && time - lastWaveTime > waveInterval) {
-      spawning = true;
-      waveNumber++;
-      enemiesPerWave = waveCounts[Math.min(waveNumber-1, waveCounts.length-1)];
-      showWaveMessage("Wave " + waveNumber);
-      for(let i=0; i<enemiesPerWave; i++) {
-        setTimeout(spawnEnemy, i * 700);
-      }
-      setTimeout(() => {
-        spawning = false;
-        lastWaveTime = time;
-      }, enemiesPerWave * 700 + 1000);
+  // Game over handler
+  function gameOver(baseDestroyed) {
+    gameRunning = false;
+    ui.gameOverScreen.style.display = "block";
+    ui.finalScore.textContent = `Your Score: ${score}`;
+    if(score > highestScore){
+      highestScore = score;
+      localStorage.setItem("highestScore", highestScore);
     }
-
-    requestAnimationFrame(gameLoop);
+    ui.highestScore.textContent = `Highest Score: ${highestScore}`;
+    baseUpgradeBtn.style.display = "none";
+    document.getElementById("joystickContainer").style.display = "none";
+    document.getElementById("shootButton").style.display = "none";
   }
 
+  // Start new game or level
   function startGame() {
     document.getElementById("menu").style.display = "none";
     canvas.style.display = "block";
@@ -797,47 +817,62 @@
     ui.toggleTrapTypeBtn.textContent = `Current Trap: Arrow`;
     ui.upgradeTrapBtn.textContent = `Upgrade Trap (Cost: ${trapUpgradeCost} Gold)`;
 
-    updateUI();
+    spawnNextWave();
     gameLoop();
+    trackBaseUpgradeBtn();
   }
 
-  function gameOver(baseDestroyed) {
-    gameRunning = false;
-    ui.gameOverScreen.style.display = "block";
-    ui.finalScore.textContent = `Your Score: ${score}`;
-    if(score > highestScore){
-      highestScore = score;
-      localStorage.setItem("highestScore", highestScore);
+  // Spawn next wave or level progression
+  function spawnNextWave() {
+    waveNumber++;
+    if(waveNumber > 10){
+      // Level complete
+      waveNumber = 0;
+      currentLevel++;
+      if(currentLevel > 2){
+        currentLevel = 1;
+      }
+      alert(`Level Complete! Starting Level ${currentLevel}`);
+      traps.length = 0;
+      bullets.length = 0;
+      enemies.length = 0;
+      spawnNextWave();
+      return;
     }
-    ui.highestScore.textContent = `Highest Score: ${highestScore}`;
-    baseUpgradeBtn.style.display = "none";
-
-    document.getElementById("joystickContainer").style.display = "none";
-    document.getElementById("shootButton").style.display = "none";
+    spawnWave();
+    lastWaveTime = performance.now();
+    spawning = true;
+    setTimeout(() => spawning = false, waveCounts[Math.min(waveNumber - 1, waveCounts.length - 1)] * 700 + 1000);
   }
 
-  document.getElementById("startBtn").addEventListener("click", startGame);
-  document.getElementById("restartBtn").addEventListener("click", () => {
-    ui.gameOverScreen.style.display = "none";
-    startGame();
-  });
+  // Main game loop
+  function gameLoop(time=0) {
+    if (!gameRunning) return;
 
-  // Update base upgrade button position every frame
-  function updateBaseUpgradeBtn() {
-    const rect = canvas.getBoundingClientRect();
-    baseUpgradeBtn.style.left = (rect.left + base.x + base.width - 10) + "px";
-    baseUpgradeBtn.style.top = (rect.top + base.y - 20) + "px";
-    baseUpgradeBtn.title = `Upgrade Base HP (+20 HP, Cost: ${base.upgradeCost} Gold)`;
-  }
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Update base upgrade button position continuously
-  function trackBaseUpgradeBtn() {
-    if(gameRunning){
-      updateBaseUpgradeBtn();
-      requestAnimationFrame(trackBaseUpgradeBtn);
+    drawPathAndSpots();
+    movePlayer();
+    shootAtNearestEnemy();
+
+    updateTraps();
+    updateBullets();
+    updateEnemies();
+
+    drawBase();
+    drawPlayer();
+    drawTraps();
+    drawEnemies();
+    drawBullets();
+
+    updateUI();
+
+    if (!spawning && performance.now() - lastWaveTime > waveInterval) {
+      spawnNextWave();
     }
-  }
 
+    requestAnimationFrame(gameLoop);
+  }
   // Mobile joystick logic
   const joystickContainer = document.getElementById("joystickContainer");
   const joystickKnob = document.getElementById("joystickKnob");
@@ -857,7 +892,7 @@
     let dx = touch.clientX - joystickStart.x;
     let dy = touch.clientY - joystickStart.y;
     let dist = Math.sqrt(dx*dx + dy*dy);
-    let maxDist = 50;
+    let maxDist = 60;
     if(dist > maxDist){
       dx = dx * maxDist / dist;
       dy = dy * maxDist / dist;
@@ -865,7 +900,7 @@
     }
     joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
     mobileMove.x = dx / maxDist;
-    mobileMove.y = dy / maxDist * -1; // invert y for natural up/down
+    mobileMove.y = dy / maxDist * -1;
   });
   joystickContainer.addEventListener("touchend", e => {
     e.preventDefault();
@@ -884,6 +919,25 @@
   shootButton.addEventListener("touchend", e => {
     e.preventDefault();
     mobileShooting = false;
+  });
+
+  // Load base image
+  const baseImage = new Image();
+  baseImage.src = 'https://i.imgur.com/Q9BGTuy.png'; // Örnek kale resmi, dilediğinle değiştir
+
+  // Update base upgrade button position continuously
+  function trackBaseUpgradeBtn() {
+    if(gameRunning){
+      updateBaseUpgradeBtn();
+      requestAnimationFrame(trackBaseUpgradeBtn);
+    }
+  }
+
+  // Start button listener
+  document.getElementById("startBtn").addEventListener("click", startGame);
+  document.getElementById("restartBtn").addEventListener("click", () => {
+    ui.gameOverScreen.style.display = "none";
+    startGame();
   });
 
 })();
