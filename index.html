@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Tower Defense Hero Enhanced</title>
+<title>Tower Defense Hero Ultimate</title>
 <style>
   body, html {
     margin: 0; padding: 0; overflow: hidden;
@@ -105,12 +105,23 @@
     border-radius: 10px;
     color: white;
   }
+  #waveMessage {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    color: white;
+    text-shadow: 0 0 10px black;
+    z-index: 50;
+    user-select: none;
+  }
 </style>
 </head>
 <body>
 
 <div id="menu">
-  <h1>Tower Defense Hero Enhanced</h1>
+  <h1>Tower Defense Hero Ultimate</h1>
   <button id="startBtn">Play</button>
 </div>
 
@@ -119,13 +130,13 @@
 
 <div id="ui" style="display:none;">
   Gold: <span id="gold">0</span> &nbsp; | &nbsp;
-  Base HP: <span id="baseHp">100</span> &nbsp; | &nbsp;
+  Base HP: <span id="baseHp">100 / 100</span> &nbsp; | &nbsp;
   Traps: <span id="trapCount">0</span> &nbsp; | &nbsp;
   Score: <span id="score">0</span>
   <div id="upgradePanel">
     Trap Damage: <span id="trapDmg">1</span>
     <button id="upgradeTrapBtn">Upgrade Trap (Cost: 50 Gold)</button>
-    <div class="tooltip">Increase damage of all traps</div>
+    <div class="tooltip">Increase damage of all arrow traps</div>
     <br/>
     <button id="toggleTrapTypeBtn" title="Switch trap type">Current Trap: Arrow</button>
     <div class="tooltip">Toggle between Arrow Trap and Bomb Trap</div>
@@ -137,6 +148,8 @@
   <div id="highestScore"></div>
   <button id="restartBtn">Restart</button>
 </div>
+
+<div id="waveMessage" style="display:none;"></div>
 
 <script>
 (() => {
@@ -153,7 +166,8 @@
     score: document.getElementById("score"),
     finalScore: document.getElementById("finalScore"),
     highestScore: document.getElementById("highestScore"),
-    gameOverScreen: document.getElementById("gameOverScreen")
+    gameOverScreen: document.getElementById("gameOverScreen"),
+    waveMessage: document.getElementById("waveMessage")
   };
 
   const baseUpgradeBtn = document.getElementById("baseUpgradeBtn");
@@ -202,7 +216,7 @@
 
   // Enemy spawn settings
   let waveNumber = 0;
-  let waveInterval = 3500; // 3.5 seconds
+  let waveInterval = 5000; // 5 seconds between waves
   let lastWaveTime = 0;
   let enemiesPerWave = 3;
 
@@ -210,6 +224,8 @@
   const enemyBaseDamage = 5;
   let enemySpeedBase = 0.5;
   let enemySpeedIncreasePerWave = 0.05;
+
+  let spawning = false; // controls if currently spawning wave
 
   // Keyboard controls
   document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
@@ -247,7 +263,7 @@
             width: 30,
             height: 30,
             damage: BOMB_DAMAGE,
-            cooldown: 0,
+            cooldown: 60, // explode 1s after placed
             exploded: false
           });
         }
@@ -290,8 +306,9 @@
 
   // Position base upgrade button on base
   function updateBaseUpgradeBtn() {
-    baseUpgradeBtn.style.left = (canvas.offsetLeft + base.x + base.width - 10) + "px";
-    baseUpgradeBtn.style.top = (canvas.offsetTop + base.y - 20) + "px";
+    const rect = canvas.getBoundingClientRect();
+    baseUpgradeBtn.style.left = (rect.left + base.x + base.width - 10) + "px";
+    baseUpgradeBtn.style.top = (rect.top + base.y - 20) + "px";
     baseUpgradeBtn.title = `Upgrade Base HP (+20 HP, Cost: ${base.upgradeCost} Gold)`;
   }
 
@@ -398,7 +415,7 @@
           trap.shootCooldown = TRAP_SHOOT_COOLDOWN;
         }
       } else if(trap.type === "bomb") {
-        if(trap.exploded) return; // already exploded, ignore
+        if(trap.exploded) return;
 
         if(trap.cooldown > 0){
           trap.cooldown--;
@@ -557,6 +574,14 @@
     updateUI();
   }
 
+  function showWaveMessage(text) {
+    ui.waveMessage.style.display = "block";
+    ui.waveMessage.textContent = text;
+    setTimeout(() => {
+      ui.waveMessage.style.display = "none";
+    }, 3000);
+  }
+
   function gameLoop(time=0) {
     if (!gameRunning) return;
 
@@ -577,13 +602,18 @@
 
     drawUI();
 
-    if (time - lastWaveTime > waveInterval) {
+    if (!spawning && time - lastWaveTime > waveInterval) {
+      spawning = true;
       waveNumber++;
       enemiesPerWave = Math.min(20, 3 + waveNumber * 2);
+      showWaveMessage("Wave " + waveNumber);
       for(let i=0; i<enemiesPerWave; i++) {
-        setTimeout(spawnEnemy, i * 600);
+        setTimeout(spawnEnemy, i * 700);
       }
-      lastWaveTime = time;
+      setTimeout(() => {
+        spawning = false;
+        lastWaveTime = time;
+      }, enemiesPerWave * 700 + 1000);
     }
 
     requestAnimationFrame(gameLoop);
