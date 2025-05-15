@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-<title>Tower Defense Mobile Ready</title>
+<title>Tower Defense Mobile Ready - Fixed</title>
 <style>
   html, body {
     margin:0; padding:0; overflow:hidden;
     background: #121212;
     color: white;
     font-family: Arial, sans-serif;
-    -webkit-touch-callout: none; /* Disable callout, copy, etc on iOS */
+    -webkit-touch-callout: none;
     -webkit-user-select: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -250,9 +250,6 @@
   let trapDamage = 1;
   let trapUpgradeCost = 50;
 
-  // Trap types: "arrow" or "mine"
-  let currentTrapType = "arrow";
-
   let keys = {};
   let mobileMove = {x:0, y:0};
   let mobileShooting = false;
@@ -286,7 +283,7 @@
     {x: 500, y: 250},
     {x: 300, y: 250},
     {x: 300, y: 450},
-    {x: 50, y: 450}, // Near base (50,350 base y=310 now)
+    {x: 50, y: 450}, // Near base
   ];
 
   // Valid tower spots where player can place traps
@@ -417,13 +414,18 @@
 
   // Player movement (WASD or mobile)
   function movePlayer() {
-    let moveX = keys["a"] ? -player.speed : keys["d"] ? player.speed : 0;
-    let moveY = keys["w"] ? -player.speed : keys["s"] ? player.speed : 0;
+    let moveX = 0;
+    let moveY = 0;
 
-    // Mobile joystick controls override keys
+    if(keys["a"]) moveX -= player.speed;
+    if(keys["d"]) moveX += player.speed;
+    if(keys["w"]) moveY -= player.speed;
+    if(keys["s"]) moveY += player.speed;
+
+    // Mobile joystick override
     if(mobileMove.x !== 0 || mobileMove.y !== 0){
       moveX = mobileMove.x * player.speed;
-      moveY = mobileMove.y * player.speed;
+      moveY = mobileMove.y * player.speed * -1; // invert Y for natural control
     }
 
     player.x += moveX;
@@ -505,11 +507,9 @@
       } else if(trap.type === "mine") {
         if(trap.exploded) return;
 
-        // Mines have hp, enemies can attack mines
         if(trap.cooldown > 0){
           trap.cooldown--;
         } else {
-          // Explode
           trap.exploded = true;
           for(let i=enemies.length-1; i>=0; i--){
             const e = enemies[i];
@@ -703,7 +703,6 @@
 
   // Draw path and valid tower spots
   function drawPathAndSpots() {
-    // Draw path lines
     ctx.strokeStyle = "#666";
     ctx.lineWidth = 20;
     ctx.lineCap = "round";
@@ -714,23 +713,12 @@
     }
     ctx.stroke();
 
-    // Draw spots
     validTowerSpots.forEach(spot => {
       ctx.fillStyle = "rgba(255,255,0,0.3)";
       ctx.fillRect(spot.x, spot.y, spot.width, spot.height);
       ctx.strokeStyle = "yellow";
       ctx.strokeRect(spot.x, spot.y, spot.width, spot.height);
     });
-  }
-
-  // UI update
-  function updateUI() {
-    ui.gold.textContent = gold;
-    ui.baseHp.textContent = base.hp + " / " + base.maxHp;
-    ui.trapCount.textContent = traps.length;
-    ui.trapDmg.textContent = trapDamage;
-    ui.score.textContent = score;
-    updateBaseUpgradeBtn();
   }
 
   function showWaveMessage(text) {
@@ -760,7 +748,7 @@
     drawEnemies();
     drawBullets();
 
-    drawUI();
+    updateUI();
 
     if (!spawning && time - lastWaveTime > waveInterval) {
       spawning = true;
@@ -786,7 +774,6 @@
     baseUpgradeBtn.style.display = "block";
     ui.gameOverScreen.style.display = "none";
 
-    // Show mobile controls if touch device
     if('ontouchstart' in window || navigator.maxTouchPoints){
       document.getElementById("joystickContainer").style.display = "block";
       document.getElementById("shootButton").style.display = "block";
@@ -824,7 +811,7 @@
     }
     ui.highestScore.textContent = `Highest Score: ${highestScore}`;
     baseUpgradeBtn.style.display = "none";
-    // Hide mobile controls on game over
+
     document.getElementById("joystickContainer").style.display = "none";
     document.getElementById("shootButton").style.display = "none";
   }
@@ -835,7 +822,7 @@
     startGame();
   });
 
-  // Position upgrade button every frame
+  // Update base upgrade button position every frame
   function updateBaseUpgradeBtn() {
     const rect = canvas.getBoundingClientRect();
     baseUpgradeBtn.style.left = (rect.left + base.x + base.width - 10) + "px";
