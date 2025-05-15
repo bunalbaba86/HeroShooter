@@ -86,7 +86,16 @@
 
 <script>
 (() => {
-  const canvas = document.getElementById("gameCanvas");
+const canvas = document.getElementById("gameCanvas");
+canvas.width = 1200;
+canvas.height = 700;
+
+// ...
+
+// Enemy base speed and scaling
+let enemySpeedBase = 0.5;          // Daha yavaş başlangıç hızı
+let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
+
   const ctx = canvas.getContext("2d");
 
   const ui = {
