@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Tower Defense + Hero Game</title>
+<title>Tower Defense + Hero Game (Traps Shoot Arrows)</title>
 <style>
   body, html {
     margin: 0; padding: 0; overflow: hidden;
@@ -128,6 +128,10 @@
 
   let keys = {};
 
+  // For traps firing arrows
+  // Each trap has a cooldown timer for shooting arrows
+  const TRAP_SHOOT_COOLDOWN = 60; // frames (1 second at 60fps)
+
   // Waves / enemy spawn
   let waveNumber = 0;
   let waveInterval = 3000; // 3 seconds
@@ -141,7 +145,6 @@
   let enemySpeedBase = 1;
   let enemySpeedIncreasePerWave = 0.1;
 
-  // Event listeners
   document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
   document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
@@ -151,16 +154,21 @@
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    // Place trap if clicked near base or player not on trap
     if (gold >= 20) {
-      // Make sure not overlapping existing trap (simple check)
       const overlap = traps.some(t => {
         const dx = t.x - clickX;
         const dy = t.y - clickY;
         return Math.sqrt(dx*dx+dy*dy) < 30;
       });
       if (!overlap) {
-        traps.push({x: clickX - 15, y: clickY - 15, width: 30, height: 30, damage: trapDamage});
+        traps.push({
+          x: clickX - 15,
+          y: clickY - 15,
+          width: 30,
+          height: 30,
+          damage: trapDamage,
+          shootCooldown: 0
+        });
         gold -= 20;
         updateUI();
       }
@@ -240,19 +248,53 @@
     }
   }
 
+  function updateTraps() {
+    traps.forEach(trap => {
+      if (trap.shootCooldown > 0) {
+        trap.shootCooldown--;
+        return;
+      }
+      // Find nearest enemy in range (say 150 px)
+      let closest = null;
+      let minDist = Infinity;
+      enemies.forEach(e => {
+        const dx = e.x + e.width/2 - (trap.x + trap.width/2);
+        const dy = e.y + e.height/2 - (trap.y + trap.height/2);
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < 150 && dist < minDist) {
+          closest = e;
+          minDist = dist;
+        }
+      });
+      if (closest) {
+        const angle = Math.atan2(
+          (closest.y + closest.height/2) - (trap.y + trap.height/2),
+          (closest.x + closest.width/2) - (trap.x + trap.width/2)
+        );
+        bullets.push({
+          x: trap.x + trap.width/2,
+          y: trap.y + trap.height/2,
+          vx: Math.cos(angle) * 7,
+          vy: Math.sin(angle) * 7,
+          radius: 4,
+          damage: trap.damage
+        });
+        trap.shootCooldown = TRAP_SHOOT_COOLDOWN;
+      }
+    });
+  }
+
   function updateBullets() {
     for(let i=bullets.length-1; i>=0; i--) {
       let b = bullets[i];
       b.x += b.vx;
       b.y += b.vy;
 
-      // Remove bullet if off screen
       if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
         bullets.splice(i,1);
         continue;
       }
 
-      // Collision with enemies
       for(let j=enemies.length-1; j>=0; j--) {
         let e = enemies[j];
         if (b.x > e.x && b.x < e.x + e.width &&
@@ -275,21 +317,6 @@
       let e = enemies[i];
       e.x -= e.speed;
 
-      // Check collision with traps
-      for(let t of traps) {
-        if (e.x < t.x + t.width && e.x + e.width > t.x &&
-            e.y < t.y + t.height && e.y + e.height > t.y) {
-          e.hp -= t.damage;
-          if (e.hp <= 0) {
-            gold += 10;
-            enemies.splice(i,1);
-            updateUI();
-            break;
-          }
-        }
-      }
-
-      // Check collision with player (damage player)
       if (e.x < player.x + player.width &&
           e.x + e.width > player.x &&
           e.y < player.y + player.height &&
@@ -303,7 +330,6 @@
         continue;
       }
 
-      // Check if enemy reached base
       if (e.x < base.x + base.width) {
         base.hp -= e.damage;
         enemies.splice(i,1);
@@ -319,7 +345,6 @@
   function drawBase() {
     ctx.fillStyle = base.color;
     ctx.fillRect(base.x, base.y, base.width, base.height);
-    // Base HP bar
     ctx.fillStyle = "black";
     ctx.fillRect(base.x, base.y - 10, base.width, 5);
     ctx.fillStyle = "limegreen";
@@ -332,9 +357,18 @@
   }
 
   function drawTraps() {
-    ctx.fillStyle = "#ffcc00";
     traps.forEach(t => {
+      ctx.fillStyle = "#ffcc00";
       ctx.fillRect(t.x, t.y, t.width, t.height);
+
+      // Draw arrow icon (triangle)
+      ctx.fillStyle = "black";
+      ctx.beginPath();
+      ctx.moveTo(t.x + t.width/2, t.y + 6);
+      ctx.lineTo(t.x + 6, t.y + t.height - 6);
+      ctx.lineTo(t.x + t.width - 6, t.y + t.height - 6);
+      ctx.closePath();
+      ctx.fill();
     });
   }
 
@@ -342,7 +376,6 @@
     enemies.forEach(e => {
       ctx.fillStyle = e.color;
       ctx.fillRect(e.x, e.y, e.width, e.height);
-      // HP bar
       ctx.fillStyle = "black";
       ctx.fillRect(e.x, e.y - 6, e.width, 4);
       ctx.fillStyle = "red";
@@ -371,6 +404,7 @@
     movePlayer();
     shootAtNearestEnemy();
 
+    updateTraps();
     updateBullets();
     updateEnemies();
 
@@ -382,7 +416,6 @@
 
     drawUI();
 
-    // Wave management
     if (time - lastWaveTime > waveInterval) {
       waveNumber++;
       enemiesPerWave = Math.min(20, 3 + waveNumber * 2);
@@ -401,7 +434,6 @@
     document.getElementById("ui").style.display = "block";
     gameRunning = true;
 
-    // Reset stats
     base.hp = base.maxHp;
     player.hp = 20;
     gold = 0;
@@ -414,6 +446,7 @@
     lastWaveTime = 0;
     enemiesPerWave = 3;
     updateUI();
+    ui.upgradeTrapBtn.textContent = `Upgrade Trap (Cost: ${trapUpgradeCost} Gold)`;
     gameLoop();
   }
 
