@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Tower Defense + Hero Game (Traps Shoot Arrows)</title>
+<title>Tower Defense Hero Enhanced</title>
 <style>
   body, html {
     margin: 0; padding: 0; overflow: hidden;
@@ -15,6 +15,7 @@
     display: block;
     margin: 0 auto;
     border: 2px solid #eee;
+    cursor: crosshair;
   }
   #ui {
     position: absolute;
@@ -24,6 +25,7 @@
     border-radius: 8px;
     font-size: 18px;
     user-select: none;
+    z-index: 10;
   }
   #menu {
     position: absolute;
@@ -34,6 +36,7 @@
     border-radius: 15px;
     text-align: center;
     box-shadow: 0 0 20px #ff7e5f;
+    z-index: 20;
   }
   #menu button {
     font-size: 24px;
@@ -62,40 +65,82 @@
     opacity: 0.8;
     margin-top: 5px;
   }
+  #baseUpgradeBtn {
+    position: absolute;
+    background: #28a745;
+    color: white;
+    font-weight: bold;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    font-size: 22px;
+    line-height: 28px;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    border: 2px solid white;
+    z-index: 15;
+  }
+  #gameOverScreen {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #222;
+    padding: 30px 50px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 0 20px #ff7e5f;
+    color: white;
+    font-size: 24px;
+    display: none;
+    z-index: 30;
+  }
+  #gameOverScreen button {
+    margin-top: 20px;
+    padding: 10px 30px;
+    font-size: 20px;
+    cursor: pointer;
+    background: #ff7e5f;
+    border: none;
+    border-radius: 10px;
+    color: white;
+  }
 </style>
 </head>
 <body>
 
 <div id="menu">
-  <h1>Tower Defense Hero</h1>
+  <h1>Tower Defense Hero Enhanced</h1>
   <button id="startBtn">Play</button>
 </div>
 
-<canvas id="gameCanvas" width="900" height="500" style="display:none;"></canvas>
+<canvas id="gameCanvas" width="1200" height="700" style="display:none;"></canvas>
+<div id="baseUpgradeBtn" title="Upgrade Base HP (+20 HP, Cost: 100 Gold)" style="display:none;">+</div>
 
 <div id="ui" style="display:none;">
   Gold: <span id="gold">0</span> &nbsp; | &nbsp;
   Base HP: <span id="baseHp">100</span> &nbsp; | &nbsp;
-  Traps: <span id="trapCount">0</span>
+  Traps: <span id="trapCount">0</span> &nbsp; | &nbsp;
+  Score: <span id="score">0</span>
   <div id="upgradePanel">
     Trap Damage: <span id="trapDmg">1</span>
     <button id="upgradeTrapBtn">Upgrade Trap (Cost: 50 Gold)</button>
     <div class="tooltip">Increase damage of all traps</div>
+    <br/>
+    <button id="toggleTrapTypeBtn" title="Switch trap type">Current Trap: Arrow</button>
+    <div class="tooltip">Toggle between Arrow Trap and Bomb Trap</div>
   </div>
+</div>
+
+<div id="gameOverScreen">
+  <div id="finalScore"></div>
+  <div id="highestScore"></div>
+  <button id="restartBtn">Restart</button>
 </div>
 
 <script>
 (() => {
-const canvas = document.getElementById("gameCanvas");
-canvas.width = 1200;
-canvas.height = 700;
-
-// ...
-
-// Enemy base speed and scaling
-let enemySpeedBase = 0.5;          // Daha yavaş başlangıç hızı
-let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
-
+  const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
   const ui = {
@@ -103,10 +148,20 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     baseHp: document.getElementById("baseHp"),
     trapCount: document.getElementById("trapCount"),
     trapDmg: document.getElementById("trapDmg"),
-    upgradeTrapBtn: document.getElementById("upgradeTrapBtn")
+    upgradeTrapBtn: document.getElementById("upgradeTrapBtn"),
+    toggleTrapTypeBtn: document.getElementById("toggleTrapTypeBtn"),
+    score: document.getElementById("score"),
+    finalScore: document.getElementById("finalScore"),
+    highestScore: document.getElementById("highestScore"),
+    gameOverScreen: document.getElementById("gameOverScreen")
   };
 
+  const baseUpgradeBtn = document.getElementById("baseUpgradeBtn");
+
   let gameRunning = false;
+  let score = 0;
+  let highestScore = localStorage.getItem("highestScore") || 0;
+
   const base = {
     x: 50,
     y: canvas.height / 2 - 40,
@@ -114,7 +169,8 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     height: 80,
     maxHp: 100,
     hp: 100,
-    color: "#00aa00"
+    color: "#00aa00",
+    upgradeCost: 100
   };
 
   const player = {
@@ -135,28 +191,31 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
   let trapDamage = 1;
   let trapUpgradeCost = 50;
 
+  // Trap types: "arrow" or "bomb"
+  let currentTrapType = "arrow";
+
   let keys = {};
 
-  // For traps firing arrows
-  // Each trap has a cooldown timer for shooting arrows
   const TRAP_SHOOT_COOLDOWN = 60; // frames (1 second at 60fps)
+  const BOMB_RADIUS = 60;
+  const BOMB_DAMAGE = 10;
 
-  // Waves / enemy spawn
+  // Enemy spawn settings
   let waveNumber = 0;
-  let waveInterval = 3000; // 3 seconds
+  let waveInterval = 3500; // 3.5 seconds
   let lastWaveTime = 0;
   let enemiesPerWave = 3;
 
-  // Enemy base damage
+  // Enemy base damage and speed
   const enemyBaseDamage = 5;
+  let enemySpeedBase = 0.5;
+  let enemySpeedIncreasePerWave = 0.05;
 
-  // Enemy speed scaling
-  let enemySpeedBase = 1;
-  let enemySpeedIncreasePerWave = 0.1;
-
+  // Keyboard controls
   document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
   document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
+  // Trap placement
   canvas.addEventListener("click", e => {
     if (!gameRunning) return;
     const rect = canvas.getBoundingClientRect();
@@ -170,38 +229,82 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
         return Math.sqrt(dx*dx+dy*dy) < 30;
       });
       if (!overlap) {
-        traps.push({
-          x: clickX - 15,
-          y: clickY - 15,
-          width: 30,
-          height: 30,
-          damage: trapDamage,
-          shootCooldown: 0
-        });
+        if(currentTrapType === "arrow"){
+          traps.push({
+            type: "arrow",
+            x: clickX - 15,
+            y: clickY - 15,
+            width: 30,
+            height: 30,
+            damage: trapDamage,
+            shootCooldown: 0
+          });
+        } else {
+          traps.push({
+            type: "bomb",
+            x: clickX - 15,
+            y: clickY - 15,
+            width: 30,
+            height: 30,
+            damage: BOMB_DAMAGE,
+            cooldown: 0,
+            exploded: false
+          });
+        }
         gold -= 20;
         updateUI();
       }
     }
   });
 
+  // Upgrade trap damage
   ui.upgradeTrapBtn.addEventListener("click", () => {
     if (gold >= trapUpgradeCost) {
       gold -= trapUpgradeCost;
       trapDamage++;
       trapUpgradeCost = Math.floor(trapUpgradeCost * 1.5);
-      traps.forEach(t => t.damage = trapDamage);
+      traps.forEach(t => { if(t.type === "arrow") t.damage = trapDamage; });
       updateUI();
       ui.upgradeTrapBtn.textContent = `Upgrade Trap (Cost: ${trapUpgradeCost} Gold)`;
     }
   });
 
-  function updateUI() {
-    ui.gold.textContent = gold;
-    ui.baseHp.textContent = base.hp;
-    ui.trapCount.textContent = traps.length;
-    ui.trapDmg.textContent = trapDamage;
+  // Toggle trap type button
+  ui.toggleTrapTypeBtn.addEventListener("click", () => {
+    currentTrapType = (currentTrapType === "arrow") ? "bomb" : "arrow";
+    ui.toggleTrapTypeBtn.textContent = `Current Trap: ${currentTrapType.charAt(0).toUpperCase() + currentTrapType.slice(1)}`;
+  });
+
+  // Base upgrade button
+  baseUpgradeBtn.addEventListener("click", () => {
+    if(!gameRunning) return;
+    if(gold >= base.upgradeCost){
+      gold -= base.upgradeCost;
+      base.maxHp += 20;
+      base.hp += 20;
+      base.upgradeCost = Math.floor(base.upgradeCost * 1.7);
+      updateUI();
+      updateBaseUpgradeBtn();
+    }
+  });
+
+  // Position base upgrade button on base
+  function updateBaseUpgradeBtn() {
+    baseUpgradeBtn.style.left = (canvas.offsetLeft + base.x + base.width - 10) + "px";
+    baseUpgradeBtn.style.top = (canvas.offsetTop + base.y - 20) + "px";
+    baseUpgradeBtn.title = `Upgrade Base HP (+20 HP, Cost: ${base.upgradeCost} Gold)`;
   }
 
+  function updateUI() {
+    ui.gold.textContent = gold;
+    ui.baseHp.textContent = base.hp + " / " + base.maxHp;
+    ui.trapCount.textContent = traps.length;
+    ui.trapDmg.textContent = trapDamage;
+    ui.score.textContent = score;
+    updateBaseUpgradeBtn();
+  }
+
+  // Enemy spawn
   function spawnEnemy() {
     const y = Math.random() * (canvas.height - 40);
     const speed = enemySpeedBase + waveNumber * enemySpeedIncreasePerWave;
@@ -217,6 +320,7 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     });
   }
 
+  // Player movement
   function movePlayer() {
     if (keys["w"]) player.y -= player.speed;
     if (keys["s"]) player.y += player.speed;
@@ -227,6 +331,7 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
   }
 
+  // Player shoots at nearest enemy
   function shootAtNearestEnemy() {
     if (player.cooldown > 0) {
       player.cooldown--;
@@ -257,42 +362,73 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     }
   }
 
+  // Traps behavior (arrow traps shoot, bomb traps countdown and explode)
   function updateTraps() {
-    traps.forEach(trap => {
-      if (trap.shootCooldown > 0) {
-        trap.shootCooldown--;
-        return;
-      }
-      // Find nearest enemy in range (say 150 px)
-      let closest = null;
-      let minDist = Infinity;
-      enemies.forEach(e => {
-        const dx = e.x + e.width/2 - (trap.x + trap.width/2);
-        const dy = e.y + e.height/2 - (trap.y + trap.height/2);
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 150 && dist < minDist) {
-          closest = e;
-          minDist = dist;
+    traps.forEach((trap, idx) => {
+      if(trap.type === "arrow") {
+        if (trap.shootCooldown > 0) {
+          trap.shootCooldown--;
+          return;
         }
-      });
-      if (closest) {
-        const angle = Math.atan2(
-          (closest.y + closest.height/2) - (trap.y + trap.height/2),
-          (closest.x + closest.width/2) - (trap.x + trap.width/2)
-        );
-        bullets.push({
-          x: trap.x + trap.width/2,
-          y: trap.y + trap.height/2,
-          vx: Math.cos(angle) * 7,
-          vy: Math.sin(angle) * 7,
-          radius: 4,
-          damage: trap.damage
+        // Find nearest enemy in range (150 px)
+        let closest = null;
+        let minDist = Infinity;
+        enemies.forEach(e => {
+          const dx = e.x + e.width/2 - (trap.x + trap.width/2);
+          const dy = e.y + e.height/2 - (trap.y + trap.height/2);
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist < 150 && dist < minDist) {
+            closest = e;
+            minDist = dist;
+          }
         });
-        trap.shootCooldown = TRAP_SHOOT_COOLDOWN;
+        if (closest) {
+          const angle = Math.atan2(
+            (closest.y + closest.height/2) - (trap.y + trap.height/2),
+            (closest.x + closest.width/2) - (trap.x + trap.width/2)
+          );
+          bullets.push({
+            x: trap.x + trap.width/2,
+            y: trap.y + trap.height/2,
+            vx: Math.cos(angle) * 7,
+            vy: Math.sin(angle) * 7,
+            radius: 4,
+            damage: trap.damage
+          });
+          trap.shootCooldown = TRAP_SHOOT_COOLDOWN;
+        }
+      } else if(trap.type === "bomb") {
+        if(trap.exploded) return; // already exploded, ignore
+
+        if(trap.cooldown > 0){
+          trap.cooldown--;
+        } else {
+          // Bomb explodes
+          trap.exploded = true;
+          // Damage enemies within radius
+          for(let i=enemies.length-1; i>=0; i--){
+            const e = enemies[i];
+            const dx = (trap.x + trap.width/2) - (e.x + e.width/2);
+            const dy = (trap.y + trap.height/2) - (e.y + e.height/2);
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist <= BOMB_RADIUS){
+              e.hp -= trap.damage;
+              if(e.hp <= 0){
+                gold += 10;
+                enemies.splice(i,1);
+                score += 10;
+                updateUI();
+              }
+            }
+          }
+          // Remove bomb trap after explosion
+          traps.splice(idx,1);
+        }
       }
     });
   }
 
+  // Bullets move and collide with enemies
   function updateBullets() {
     for(let i=bullets.length-1; i>=0; i--) {
       let b = bullets[i];
@@ -312,6 +448,7 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
           bullets.splice(i,1);
           if (e.hp <= 0) {
             gold += 10;
+            score += 10;
             enemies.splice(j,1);
             updateUI();
           }
@@ -321,6 +458,7 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     }
   }
 
+  // Enemy movement and collision with player/base
   function updateEnemies() {
     for(let i=enemies.length-1; i>=0; i--) {
       let e = enemies[i];
@@ -333,8 +471,8 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
         player.hp -= e.damage;
         enemies.splice(i,1);
         if (player.hp <= 0) {
-          alert("You died! Game Over.");
-          endGame();
+          gameOver(false);
+          return;
         }
         continue;
       }
@@ -344,13 +482,14 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
         enemies.splice(i,1);
         updateUI();
         if (base.hp <= 0) {
-          alert("Base destroyed! Game Over.");
-          endGame();
+          gameOver(true);
+          return;
         }
       }
     }
   }
 
+  // Drawing functions
   function drawBase() {
     ctx.fillStyle = base.color;
     ctx.fillRect(base.x, base.y, base.width, base.height);
@@ -367,17 +506,30 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
 
   function drawTraps() {
     traps.forEach(t => {
-      ctx.fillStyle = "#ffcc00";
-      ctx.fillRect(t.x, t.y, t.width, t.height);
-
-      // Draw arrow icon (triangle)
-      ctx.fillStyle = "black";
-      ctx.beginPath();
-      ctx.moveTo(t.x + t.width/2, t.y + 6);
-      ctx.lineTo(t.x + 6, t.y + t.height - 6);
-      ctx.lineTo(t.x + t.width - 6, t.y + t.height - 6);
-      ctx.closePath();
-      ctx.fill();
+      if(t.type === "arrow"){
+        ctx.fillStyle = "#ffcc00";
+        ctx.fillRect(t.x, t.y, t.width, t.height);
+        // Arrow icon
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.moveTo(t.x + t.width/2, t.y + 6);
+        ctx.lineTo(t.x + 6, t.y + t.height - 6);
+        ctx.lineTo(t.x + t.width - 6, t.y + t.height - 6);
+        ctx.closePath();
+        ctx.fill();
+      } else if(t.type === "bomb"){
+        ctx.fillStyle = "#d9534f";
+        ctx.beginPath();
+        ctx.arc(t.x + t.width/2, t.y + t.height/2, t.width/2, 0, Math.PI * 2);
+        ctx.fill();
+        // Fuse spark animation (simple)
+        if(t.cooldown < 30){
+          ctx.strokeStyle = "#fff";
+          ctx.beginPath();
+          ctx.arc(t.x + t.width/2, t.y + t.height/2, t.width/2 + 5, 0, Math.PI * 2 * (t.cooldown / 30));
+          ctx.stroke();
+        }
+      }
     });
   }
 
@@ -429,7 +581,7 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
       waveNumber++;
       enemiesPerWave = Math.min(20, 3 + waveNumber * 2);
       for(let i=0; i<enemiesPerWave; i++) {
-        setTimeout(spawnEnemy, i * 500);
+        setTimeout(spawnEnemy, i * 600);
       }
       lastWaveTime = time;
     }
@@ -441,7 +593,11 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     document.getElementById("menu").style.display = "none";
     canvas.style.display = "block";
     document.getElementById("ui").style.display = "block";
+    baseUpgradeBtn.style.display = "block";
+    ui.gameOverScreen.style.display = "none";
+
     gameRunning = true;
+    score = 0;
 
     base.hp = base.maxHp;
     player.hp = 20;
@@ -454,19 +610,52 @@ let enemySpeedIncreasePerWave = 0.05;  // Daha yavaş artış
     waveNumber = 0;
     lastWaveTime = 0;
     enemiesPerWave = 3;
-    updateUI();
+    currentTrapType = "arrow";
+    ui.toggleTrapTypeBtn.textContent = `Current Trap: Arrow`;
     ui.upgradeTrapBtn.textContent = `Upgrade Trap (Cost: ${trapUpgradeCost} Gold)`;
+
+    updateUI();
     gameLoop();
   }
 
-  function endGame() {
+  function gameOver(baseDestroyed) {
     gameRunning = false;
-    canvas.style.display = "none";
-    document.getElementById("ui").style.display = "none";
-    document.getElementById("menu").style.display = "block";
+    ui.gameOverScreen.style.display = "block";
+    ui.finalScore.textContent = `Your Score: ${score}`;
+    if(score > highestScore){
+      highestScore = score;
+      localStorage.setItem("highestScore", highestScore);
+    }
+    ui.highestScore.textContent = `Highest Score: ${highestScore}`;
+    baseUpgradeBtn.style.display = "none";
   }
 
   document.getElementById("startBtn").addEventListener("click", startGame);
+  document.getElementById("restartBtn").addEventListener("click", () => {
+    ui.gameOverScreen.style.display = "none";
+    startGame();
+  });
+
+  // Position upgrade button every frame
+  function updateBaseUpgradeBtn() {
+    const rect = canvas.getBoundingClientRect();
+    baseUpgradeBtn.style.left = (rect.left + base.x + base.width - 10) + "px";
+    baseUpgradeBtn.style.top = (rect.top + base.y - 20) + "px";
+    baseUpgradeBtn.title = `Upgrade Base HP (+20 HP, Cost: ${base.upgradeCost} Gold)`;
+  }
+
+  // Update base upgrade button position continuously
+  function trackBaseUpgradeBtn() {
+    if(gameRunning){
+      updateBaseUpgradeBtn();
+      requestAnimationFrame(trackBaseUpgradeBtn);
+    }
+  }
+
+  // Start tracking when game starts
+  document.getElementById("startBtn").addEventListener("click", () => {
+    setTimeout(trackBaseUpgradeBtn, 500);
+  });
 
 })();
 </script>
