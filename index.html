@@ -2,30 +2,34 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Tower Defense Hero Ultimate</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Tower Defense Mobile Ready</title>
 <style>
-  body, html {
-    margin: 0; padding: 0; overflow: hidden;
+  html, body {
+    margin:0; padding:0; overflow:hidden;
     background: #121212;
+    color: white;
     font-family: Arial, sans-serif;
-    color: #eee;
+    -webkit-touch-callout: none; /* Disable callout, copy, etc on iOS */
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
   #gameCanvas {
-    background-color: #222;
+    background: #222;
     display: block;
     margin: 0 auto;
     border: 2px solid #eee;
-    cursor: crosshair;
+    touch-action: none;
   }
   #ui {
     position: absolute;
     top: 10px; left: 10px;
     background: rgba(0,0,0,0.7);
-    padding: 10px 20px;
+    padding: 8px 15px;
     border-radius: 8px;
-    font-size: 18px;
+    font-size: 16px;
     user-select: none;
-    z-index: 10;
+    z-index: 20;
   }
   #menu {
     position: absolute;
@@ -36,11 +40,11 @@
     border-radius: 15px;
     text-align: center;
     box-shadow: 0 0 20px #ff7e5f;
-    z-index: 20;
+    z-index: 50;
   }
   #menu button {
     font-size: 24px;
-    padding: 10px 40px;
+    padding: 12px 45px;
     cursor: pointer;
     background: #ff7e5f;
     border: none;
@@ -48,22 +52,17 @@
     color: white;
   }
   #upgradePanel {
-    margin-top: 10px;
+    margin-top: 8px;
   }
   #upgradePanel button {
-    padding: 5px 15px;
-    margin-left: 10px;
+    padding: 4px 12px;
+    margin-left: 8px;
     cursor: pointer;
     background: #ff7e5f;
     border: none;
     border-radius: 6px;
     color: white;
     font-weight: bold;
-  }
-  .tooltip {
-    font-size: 14px;
-    opacity: 0.8;
-    margin-top: 5px;
   }
   #baseUpgradeBtn {
     position: absolute;
@@ -79,7 +78,7 @@
     cursor: pointer;
     user-select: none;
     border: 2px solid white;
-    z-index: 15;
+    z-index: 30;
   }
   #gameOverScreen {
     position: absolute;
@@ -93,7 +92,7 @@
     color: white;
     font-size: 24px;
     display: none;
-    z-index: 30;
+    z-index: 50;
   }
   #gameOverScreen button {
     margin-top: 20px;
@@ -113,15 +112,55 @@
     font-size: 48px;
     color: white;
     text-shadow: 0 0 10px black;
-    z-index: 50;
+    z-index: 40;
     user-select: none;
+  }
+
+  /* Mobile Controls */
+  #joystickContainer {
+    position: absolute;
+    bottom: 100px;
+    left: 20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    touch-action: none;
+    z-index: 60;
+    user-select: none;
+  }
+  #joystickKnob {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    background: #ff7e5f;
+    border-radius: 50%;
+    top: 30px;
+    left: 30px;
+    touch-action: none;
+  }
+  #shootButton {
+    position: absolute;
+    bottom: 100px;
+    right: 30px;
+    width: 80px;
+    height: 80px;
+    background: #ff7e5f;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 80px;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+    z-index: 60;
   }
 </style>
 </head>
 <body>
 
 <div id="menu">
-  <h1>Tower Defense Hero Ultimate</h1>
+  <h1>Tower Defense Mobile</h1>
   <button id="startBtn">Play</button>
 </div>
 
@@ -139,7 +178,7 @@
     <div class="tooltip">Increase damage of all arrow traps</div>
     <br/>
     <button id="toggleTrapTypeBtn" title="Switch trap type">Current Trap: Arrow</button>
-    <div class="tooltip">Toggle between Arrow Trap and Bomb Trap</div>
+    <div class="tooltip">Toggle between Arrow Trap and Mine Trap</div>
   </div>
 </div>
 
@@ -150,6 +189,12 @@
 </div>
 
 <div id="waveMessage" style="display:none;"></div>
+
+<!-- Mobile Controls -->
+<div id="joystickContainer" style="display:none;">
+  <div id="joystickKnob"></div>
+</div>
+<div id="shootButton" style="display:none;">Shoot</div>
 
 <script>
 (() => {
@@ -205,20 +250,23 @@
   let trapDamage = 1;
   let trapUpgradeCost = 50;
 
-  // Trap types: "arrow" or "bomb"
+  // Trap types: "arrow" or "mine"
   let currentTrapType = "arrow";
 
   let keys = {};
+  let mobileMove = {x:0, y:0};
+  let mobileShooting = false;
 
   const TRAP_SHOOT_COOLDOWN = 60; // frames (1 second at 60fps)
-  const BOMB_RADIUS = 60;
-  const BOMB_DAMAGE = 10;
+  const MINE_RADIUS = 60;
+  const MINE_DAMAGE = 10;
 
   // Enemy spawn settings
   let waveNumber = 0;
-  let waveInterval = 5000; // 5 seconds between waves
+  let waveInterval = 10000; // 10 seconds between waves
   let lastWaveTime = 0;
   let enemiesPerWave = 3;
+  const waveCounts = [3,5,10,20,30];
 
   // Enemy base damage and speed
   const enemyBaseDamage = 5;
@@ -227,48 +275,77 @@
 
   let spawning = false; // controls if currently spawning wave
 
-  // Keyboard controls
+  // Path points for enemies to follow (simple waypoints forming a maze-like path)
+  const pathPoints = [
+    {x: 1200, y: 350},
+    {x: 900, y: 350},
+    {x: 900, y: 150},
+    {x: 700, y: 150},
+    {x: 700, y: 550},
+    {x: 500, y: 550},
+    {x: 500, y: 250},
+    {x: 300, y: 250},
+    {x: 300, y: 450},
+    {x: 50, y: 450}, // Near base (50,350 base y=310 now)
+  ];
+
+  // Valid tower spots where player can place traps
+  const validTowerSpots = [
+    {x: 820, y: 250, width: 40, height: 40},
+    {x: 650, y: 350, width: 40, height: 40},
+    {x: 450, y: 350, width: 40, height: 40},
+    {x: 350, y: 400, width: 40, height: 40},
+    {x: 600, y: 200, width: 40, height: 40},
+  ];
+
+  // Event listeners
   document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
   document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
-  // Trap placement
   canvas.addEventListener("click", e => {
     if (!gameRunning) return;
     const rect = canvas.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    if (gold >= 20) {
-      const overlap = traps.some(t => {
-        const dx = t.x - clickX;
-        const dy = t.y - clickY;
-        return Math.sqrt(dx*dx+dy*dy) < 30;
-      });
-      if (!overlap) {
-        if(currentTrapType === "arrow"){
-          traps.push({
-            type: "arrow",
-            x: clickX - 15,
-            y: clickY - 15,
-            width: 30,
-            height: 30,
-            damage: trapDamage,
-            shootCooldown: 0
-          });
-        } else {
-          traps.push({
-            type: "bomb",
-            x: clickX - 15,
-            y: clickY - 15,
-            width: 30,
-            height: 30,
-            damage: BOMB_DAMAGE,
-            cooldown: 60, // explode 1s after placed
-            exploded: false
-          });
-        }
-        gold -= 20;
-        updateUI();
+    // Check if clicked on valid tower spot
+    for(let spot of validTowerSpots){
+      if(clickX >= spot.x && clickX <= spot.x + spot.width &&
+         clickY >= spot.y && clickY <= spot.y + spot.height){
+          if(gold >= 20){
+            // Check if spot already occupied
+            let occupied = traps.some(t => {
+              return Math.abs(t.x - spot.x) < 5 && Math.abs(t.y - spot.y) < 5;
+            });
+            if(!occupied){
+              if(currentTrapType === "arrow"){
+                traps.push({
+                  type: "arrow",
+                  x: spot.x,
+                  y: spot.y,
+                  width: 30,
+                  height: 30,
+                  damage: trapDamage,
+                  shootCooldown: 0,
+                  hp: 10
+                });
+              } else {
+                traps.push({
+                  type: "mine",
+                  x: spot.x,
+                  y: spot.y,
+                  width: 30,
+                  height: 30,
+                  damage: MINE_DAMAGE,
+                  cooldown: 60,
+                  exploded: false
+                });
+              }
+              gold -= 20;
+              updateUI();
+            }
+          }
+          break;
       }
     }
   });
@@ -287,7 +364,7 @@
 
   // Toggle trap type button
   ui.toggleTrapTypeBtn.addEventListener("click", () => {
-    currentTrapType = (currentTrapType === "arrow") ? "bomb" : "arrow";
+    currentTrapType = (currentTrapType === "arrow") ? "mine" : "arrow";
     ui.toggleTrapTypeBtn.textContent = `Current Trap: ${currentTrapType.charAt(0).toUpperCase() + currentTrapType.slice(1)}`;
   });
 
@@ -321,39 +398,50 @@
     updateBaseUpgradeBtn();
   }
 
-  // Enemy spawn
+  // Enemy spawn at start of path
   function spawnEnemy() {
-    const y = Math.random() * (canvas.height - 40);
-    const speed = enemySpeedBase + waveNumber * enemySpeedIncreasePerWave;
     enemies.push({
-      x: canvas.width + 40,
-      y: y,
+      x: pathPoints[0].x,
+      y: pathPoints[0].y,
       width: 30,
       height: 30,
       color: "red",
       hp: 5 + waveNumber * 2,
-      speed: speed,
-      damage: enemyBaseDamage
+      speed: enemySpeedBase + waveNumber * enemySpeedIncreasePerWave,
+      damage: enemyBaseDamage,
+      pathIndex: 0,
+      targetX: pathPoints[1].x,
+      targetY: pathPoints[1].y
     });
   }
 
-  // Player movement
+  // Player movement (WASD or mobile)
   function movePlayer() {
-    if (keys["w"]) player.y -= player.speed;
-    if (keys["s"]) player.y += player.speed;
-    if (keys["a"]) player.x -= player.speed;
-    if (keys["d"]) player.x += player.speed;
+    let moveX = keys["a"] ? -player.speed : keys["d"] ? player.speed : 0;
+    let moveY = keys["w"] ? -player.speed : keys["s"] ? player.speed : 0;
+
+    // Mobile joystick controls override keys
+    if(mobileMove.x !== 0 || mobileMove.y !== 0){
+      moveX = mobileMove.x * player.speed;
+      moveY = mobileMove.y * player.speed;
+    }
+
+    player.x += moveX;
+    player.y += moveY;
 
     player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
     player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
   }
 
-  // Player shoots at nearest enemy
+  // Player shoots if cooldown or mobile shoot button pressed
   function shootAtNearestEnemy() {
     if (player.cooldown > 0) {
       player.cooldown--;
       return;
     }
+
+    if(!mobileShooting && !keys[" "]) return;
+
     let closest = null;
     let minDist = Infinity;
     enemies.forEach(e => {
@@ -379,7 +467,7 @@
     }
   }
 
-  // Traps behavior (arrow traps shoot, bomb traps countdown and explode)
+  // Traps logic
   function updateTraps() {
     traps.forEach((trap, idx) => {
       if(trap.type === "arrow") {
@@ -414,21 +502,21 @@
           });
           trap.shootCooldown = TRAP_SHOOT_COOLDOWN;
         }
-      } else if(trap.type === "bomb") {
+      } else if(trap.type === "mine") {
         if(trap.exploded) return;
 
+        // Mines have hp, enemies can attack mines
         if(trap.cooldown > 0){
           trap.cooldown--;
         } else {
-          // Bomb explodes
+          // Explode
           trap.exploded = true;
-          // Damage enemies within radius
           for(let i=enemies.length-1; i>=0; i--){
             const e = enemies[i];
             const dx = (trap.x + trap.width/2) - (e.x + e.width/2);
             const dy = (trap.y + trap.height/2) - (e.y + e.height/2);
             const dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist <= BOMB_RADIUS){
+            if(dist <= MINE_RADIUS){
               e.hp -= trap.damage;
               if(e.hp <= 0){
                 gold += 10;
@@ -438,14 +526,13 @@
               }
             }
           }
-          // Remove bomb trap after explosion
           traps.splice(idx,1);
         }
       }
     });
   }
 
-  // Bullets move and collide with enemies
+  // Bullets update
   function updateBullets() {
     for(let i=bullets.length-1; i>=0; i--) {
       let b = bullets[i];
@@ -475,34 +562,67 @@
     }
   }
 
-  // Enemy movement and collision with player/base
+  // Enemies follow path
   function updateEnemies() {
     for(let i=enemies.length-1; i>=0; i--) {
       let e = enemies[i];
-      e.x -= e.speed;
 
+      // Move towards next waypoint
+      let dx = e.targetX - e.x;
+      let dy = e.targetY - e.y;
+      let dist = Math.sqrt(dx*dx + dy*dy);
+      if(dist < e.speed){
+        // Arrived at waypoint, next waypoint
+        e.x = e.targetX;
+        e.y = e.targetY;
+        e.pathIndex++;
+        if(e.pathIndex >= pathPoints.length - 1){
+          // Enemy reached base
+          base.hp -= e.damage;
+          enemies.splice(i,1);
+          updateUI();
+          if(base.hp <= 0){
+            gameOver(true);
+            return;
+          }
+          continue;
+        }
+        e.targetX = pathPoints[e.pathIndex + 1].x;
+        e.targetY = pathPoints[e.pathIndex + 1].y;
+      } else {
+        e.x += (dx / dist) * e.speed;
+        e.y += (dy / dist) * e.speed;
+      }
+
+      // Enemy attacks player if close
       if (e.x < player.x + player.width &&
           e.x + e.width > player.x &&
           e.y < player.y + player.height &&
           e.y + e.height > player.y) {
         player.hp -= e.damage;
         enemies.splice(i,1);
-        if (player.hp <= 0) {
+        if(player.hp <= 0){
           gameOver(false);
           return;
         }
         continue;
       }
 
-      if (e.x < base.x + base.width) {
-        base.hp -= e.damage;
-        enemies.splice(i,1);
-        updateUI();
-        if (base.hp <= 0) {
-          gameOver(true);
-          return;
+      // Enemy attacks arrow traps if close
+      traps.forEach((trap, tIdx) => {
+        if(trap.type === "arrow"){
+          if(e.x < trap.x + trap.width &&
+             e.x + e.width > trap.x &&
+             e.y < trap.y + trap.height &&
+             e.y + e.height > trap.y){
+               trap.hp -= e.damage;
+               if(trap.hp <= 0){
+                 traps.splice(tIdx,1);
+                 updateUI();
+               }
+             }
         }
-      }
+      });
     }
   }
 
@@ -519,6 +639,12 @@
   function drawPlayer() {
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
+
+    // Draw player HP bar
+    ctx.fillStyle = "black";
+    ctx.fillRect(player.x, player.y - 8, player.width, 5);
+    ctx.fillStyle = "cyan";
+    ctx.fillRect(player.x, player.y - 8, player.width * (player.hp / 20), 5);
   }
 
   function drawTraps() {
@@ -534,12 +660,17 @@
         ctx.lineTo(t.x + t.width - 6, t.y + t.height - 6);
         ctx.closePath();
         ctx.fill();
-      } else if(t.type === "bomb"){
+
+        // Trap HP bar
+        ctx.fillStyle = "black";
+        ctx.fillRect(t.x, t.y - 6, t.width, 4);
+        ctx.fillStyle = "orange";
+        ctx.fillRect(t.x, t.y - 6, t.width * (t.hp / 10), 4);
+      } else if(t.type === "mine"){
         ctx.fillStyle = "#d9534f";
         ctx.beginPath();
         ctx.arc(t.x + t.width/2, t.y + t.height/2, t.width/2, 0, Math.PI * 2);
         ctx.fill();
-        // Fuse spark animation (simple)
         if(t.cooldown < 30){
           ctx.strokeStyle = "#fff";
           ctx.beginPath();
@@ -570,8 +701,36 @@
     });
   }
 
-  function drawUI() {
-    updateUI();
+  // Draw path and valid tower spots
+  function drawPathAndSpots() {
+    // Draw path lines
+    ctx.strokeStyle = "#666";
+    ctx.lineWidth = 20;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
+    for(let i=1; i<pathPoints.length; i++){
+      ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
+    ctx.stroke();
+
+    // Draw spots
+    validTowerSpots.forEach(spot => {
+      ctx.fillStyle = "rgba(255,255,0,0.3)";
+      ctx.fillRect(spot.x, spot.y, spot.width, spot.height);
+      ctx.strokeStyle = "yellow";
+      ctx.strokeRect(spot.x, spot.y, spot.width, spot.height);
+    });
+  }
+
+  // UI update
+  function updateUI() {
+    ui.gold.textContent = gold;
+    ui.baseHp.textContent = base.hp + " / " + base.maxHp;
+    ui.trapCount.textContent = traps.length;
+    ui.trapDmg.textContent = trapDamage;
+    ui.score.textContent = score;
+    updateBaseUpgradeBtn();
   }
 
   function showWaveMessage(text) {
@@ -587,6 +746,7 @@
 
     ctx.clearRect(0,0,canvas.width,canvas.height);
 
+    drawPathAndSpots();
     movePlayer();
     shootAtNearestEnemy();
 
@@ -605,7 +765,7 @@
     if (!spawning && time - lastWaveTime > waveInterval) {
       spawning = true;
       waveNumber++;
-      enemiesPerWave = Math.min(20, 3 + waveNumber * 2);
+      enemiesPerWave = waveCounts[Math.min(waveNumber-1, waveCounts.length-1)];
       showWaveMessage("Wave " + waveNumber);
       for(let i=0; i<enemiesPerWave; i++) {
         setTimeout(spawnEnemy, i * 700);
@@ -625,6 +785,12 @@
     document.getElementById("ui").style.display = "block";
     baseUpgradeBtn.style.display = "block";
     ui.gameOverScreen.style.display = "none";
+
+    // Show mobile controls if touch device
+    if('ontouchstart' in window || navigator.maxTouchPoints){
+      document.getElementById("joystickContainer").style.display = "block";
+      document.getElementById("shootButton").style.display = "block";
+    }
 
     gameRunning = true;
     score = 0;
@@ -658,6 +824,9 @@
     }
     ui.highestScore.textContent = `Highest Score: ${highestScore}`;
     baseUpgradeBtn.style.display = "none";
+    // Hide mobile controls on game over
+    document.getElementById("joystickContainer").style.display = "none";
+    document.getElementById("shootButton").style.display = "none";
   }
 
   document.getElementById("startBtn").addEventListener("click", startGame);
@@ -682,9 +851,52 @@
     }
   }
 
-  // Start tracking when game starts
-  document.getElementById("startBtn").addEventListener("click", () => {
-    setTimeout(trackBaseUpgradeBtn, 500);
+  // Mobile joystick logic
+  const joystickContainer = document.getElementById("joystickContainer");
+  const joystickKnob = document.getElementById("joystickKnob");
+  let joystickActive = false;
+  let joystickStart = {x:0,y:0};
+
+  joystickContainer.addEventListener("touchstart", e => {
+    e.preventDefault();
+    joystickActive = true;
+    let touch = e.touches[0];
+    joystickStart = {x: touch.clientX, y: touch.clientY};
+  });
+  joystickContainer.addEventListener("touchmove", e => {
+    if(!joystickActive) return;
+    e.preventDefault();
+    let touch = e.touches[0];
+    let dx = touch.clientX - joystickStart.x;
+    let dy = touch.clientY - joystickStart.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    let maxDist = 50;
+    if(dist > maxDist){
+      dx = dx * maxDist / dist;
+      dy = dy * maxDist / dist;
+      dist = maxDist;
+    }
+    joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    mobileMove.x = dx / maxDist;
+    mobileMove.y = dy / maxDist * -1; // invert y for natural up/down
+  });
+  joystickContainer.addEventListener("touchend", e => {
+    e.preventDefault();
+    joystickActive = false;
+    joystickKnob.style.transform = "translate(0,0)";
+    mobileMove.x = 0;
+    mobileMove.y = 0;
+  });
+
+  // Mobile shoot button
+  const shootButton = document.getElementById("shootButton");
+  shootButton.addEventListener("touchstart", e => {
+    e.preventDefault();
+    mobileShooting = true;
+  });
+  shootButton.addEventListener("touchend", e => {
+    e.preventDefault();
+    mobileShooting = false;
   });
 
 })();
