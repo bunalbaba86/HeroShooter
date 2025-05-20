@@ -301,7 +301,18 @@
     youManaLabel.textContent = `Mana: ${yourData.mana}`;
     enemyManaLabel.textContent = `Mana: ${enemyData.mana}`;
 
+    updateButtons();
+
+
   }
+  function updateButtons() {
+  if (!yourData) return;
+  attackBtn.disabled = yourData.mana < 10 || !yourTurn;
+  defendBtn.disabled = yourData.mana < 5 || !yourTurn;
+  skillBtn.disabled = yourData.mana < 20 || !yourTurn;
+  manaBtn.disabled = yourData.mana >= 50 || !yourTurn;
+  }
+
 
   function setButtonsDisabled(disabled) {
     attackBtn.disabled = disabled;
