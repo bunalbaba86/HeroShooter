@@ -34,6 +34,20 @@
     display: flex;
     justify-content: space-around;
     margin-bottom: 20px;
+    <div id="damage-indicator" style="
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  color: #e74c3c;
+  text-shadow: 1px 1px 3px black;
+  display: none;
+  pointer-events: none;
+  z-index: 20;
+"></div>
+
   }
   .player {
     width: 45%;
@@ -253,6 +267,8 @@
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
 <script>
+  const damageIndicator = document.getElementById('damage-indicator');
+
   const socket = io("https://pvpbackend.onrender.com");
 
   // Oyuncu ve düşman barları
@@ -372,6 +388,9 @@
     enemyData = data.enemy;
     yourTurn = false;
     updateBars();
+    if(data.damage) {
+  showDamage(data.damage);
+}
     setStatus("Opponent's turn");
     setButtonsDisabled(true);
   });
@@ -380,7 +399,10 @@
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = true;
-    updateBars();
+    updateBars(); 
+    if(data.damage) {
+  showDamage(data.damage);
+}
     setStatus("Your turn");
     setButtonsDisabled(false);
   });
@@ -427,6 +449,15 @@
   defendBtn.onclick = () => sendMove('defend');
   skillBtn.onclick = () => sendMove('skill');
   manaBtn.onclick = () => sendMove('mana');
+
+  function showDamage(amount) {
+  damageIndicator.textContent = `-${amount}`;
+  damageIndicator.style.display = 'block';
+  setTimeout(() => {
+    damageIndicator.style.display = 'none';
+  }, 1000);
+}
+
 
  backToMenuBtn.onclick = () => {
   window.location.href = 'index.html'; // Doğrudan index.html sayfasına yönlendir
