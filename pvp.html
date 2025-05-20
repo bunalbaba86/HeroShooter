@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Monster Clash - PvP</title>
   <style>
     body { background: #111; color: #eee; font-family: sans-serif; text-align: center; }
@@ -9,19 +9,28 @@
     .box { border: 1px solid #fff; padding: 10px; width: 250px; }
     .log { height: 150px; overflow-y: auto; border: 1px solid #eee; margin-top: 20px; padding: 10px; }
     button { margin: 5px; padding: 10px; font-size: 16px; }
+    button:disabled { background: #555; cursor: not-allowed; }
   </style>
 </head>
 <body>
   <h1>Monster Clash - PvP</h1>
   <div class="container">
-    <div class="box" id="playerBox">Player</div>
-    <div class="box" id="enemyBox">Opponent</div>
+    <div class="box" id="playerBox">
+      <h2>You</h2>
+      <p id="playerHealth">Health: 100</p>
+      <p id="playerMana">Mana: 50</p>
+    </div>
+    <div class="box" id="enemyBox">
+      <h2>Opponent</h2>
+      <p id="enemyHealth">Health: 100</p>
+      <p id="enemyMana">Mana: 50</p>
+    </div>
   </div>
 
   <div>
-    <button onclick="makeMove('attack')">Attack</button>
-    <button onclick="makeMove('defend')">Defend</button>
-    <button onclick="makeMove('skill')">Skill</button>
+    <button id="attackBtn" onclick="makeMove('attack')">Attack (Cost 10 Mana)</button>
+    <button id="defendBtn" onclick="makeMove('defend')">Defend (Cost 5 Mana)</button>
+    <button id="skillBtn" onclick="makeMove('skill')">Skill (Cost 20 Mana)</button>
   </div>
 
   <div class="log" id="log"></div>
@@ -33,10 +42,31 @@
     let roomId = '';
     let isMyTurn = false;
 
+    // Player and enemy status
+    let player = { health: 100, mana: 50 };
+    let enemy = { health: 100, mana: 50 };
+
+    // Cooldown: 3 seconds between moves
+    const cooldownTime = 3000;
+    let lastMoveTime = 0;
+
+    const buttons = {
+      attack: document.getElementById('attackBtn'),
+      defend: document.getElementById('defendBtn'),
+      skill: document.getElementById('skillBtn'),
+    };
+
     function log(msg) {
       const logBox = document.getElementById('log');
       logBox.innerHTML += msg + '<br>';
       logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function updateUI() {
+      document.getElementById('playerHealth').textContent = `Health: ${player.health}`;
+      document.getElementById('playerMana').textContent = `Mana: ${player.mana}`;
+      document.getElementById('enemyHealth').textContent = `Health: ${enemy.health}`;
+      document.getElementById('enemyMana').textContent = `Mana: ${enemy.mana}`;
     }
 
     socket.on('waiting', msg => {
@@ -47,25 +77,74 @@
       roomId = data.roomId;
       isMyTurn = data.players[0] === socket.id;
       log('Game started! ' + (isMyTurn ? 'Your turn!' : 'Waiting for opponent...'));
-      renderPlayer();
+      updateUI();
     });
 
-    socket.on('opponentMove', (move) => {
-      log(`Opponent chose: ${move}`);
+    socket.on('opponentMove', (moveData) => {
+      log(`Opponent used: ${moveData.move}`);
+      applyMove(enemy, player, moveData.move);
       isMyTurn = true;
+      updateUI();
       log('Your turn!');
+      enableButtons();
     });
+
+    function applyMove(attacker, defender, move) {
+      switch(move) {
+        case 'attack':
+          if (attacker.mana >= 10) {
+            attacker.mana -= 10;
+            defender.health -= 15;
+          }
+          break;
+        case 'defend':
+          if (attacker.mana >= 5) {
+            attacker.mana -= 5;
+            attacker.health += 10; // Heal a bit
+            if (attacker.health > 100) attacker.health = 100;
+          }
+          break;
+        case 'skill':
+          if (attacker.mana >= 20) {
+            attacker.mana -= 20;
+            defender.health -= 30;
+          }
+          break;
+      }
+    }
 
     function makeMove(move) {
+      const now = Date.now();
       if (!isMyTurn) return log('Not your turn!');
-      log(`You chose: ${move}`);
+      if (now - lastMoveTime < cooldownTime) return log('Wait before making another move!');
+
+      // Check mana cost
+      const manaCost = { attack:10, defend:5, skill:20 };
+      if (player.mana < manaCost[move]) return log('Not enough mana!');
+
+      // Apply move locally
+      applyMove(player, enemy, move);
+      updateUI();
+
+      log(`You used: ${move}`);
+
       socket.emit('playerMove', { roomId, move });
+
       isMyTurn = false;
+      lastMoveTime = now;
+      disableButtons();
+
+      checkGameOver();
     }
 
-    function renderPlayer() {
-      document.getElementById('playerBox').innerHTML = `<p>ID: ${socket.id}</p>`;
+    function disableButtons() {
+      Object.values(buttons).forEach(btn => btn.disabled = true);
     }
-  </script>
-</body>
-</html>
+
+    function enableButtons() {
+      Object.values(buttons).forEach(btn => btn.disabled = false);
+    }
+
+    function checkGameOver() {
+      if (player.health <= 0) {
+        log
