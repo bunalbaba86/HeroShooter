@@ -418,6 +418,8 @@
   manaBtn.onclick = () => sendMove('mana');
 
   backToMenuBtn.onclick = () => {
+  window.location.href = 'index.html'; // Doğrudan index.html sayfasına yönlendir
+};
     backToMenuBtn.style.display = 'none';
     victoryMessage.style.display = 'none';
     setStatus("Waiting for opponent...");
