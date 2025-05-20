@@ -9,12 +9,15 @@
   #game { margin-top: 30px; }
   button { margin: 5px; padding: 10px 20px; font-size: 16px; }
   #status { margin-top: 20px; font-size: 18px; }
-  #players { display: flex; justify-content: center; margin-top: 20px; }
-  .player-box { margin: 0 20px; padding: 10px; border: 1px solid #555; width: 150px; background: #333; }
+  #players { display: flex; justify-content: center; margin-top: 20px; gap: 40px; }
+  .player-box { padding: 10px; border: 1px solid #555; width: 180px; background: #333; border-radius: 10px; }
   .bar { height: 20px; background: #444; margin: 8px 0; border-radius: 5px; overflow: hidden; }
   .health-bar { background: #e74c3c; height: 100%; }
   .mana-bar { background: #3498db; height: 100%; }
+  .character-img { width: 100%; height: auto; border-radius: 10px; margin-bottom: 10px; }
   button:disabled { background: #555; color: #999; cursor: not-allowed; }
+  #log { margin-top: 30px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; background: #111; padding: 10px; border-radius: 10px; height: 150px; overflow-y: auto; }
+  #victory-msg { font-size: 32px; color: gold; display: none; margin-top: 20px; }
 </style>
 </head>
 <body>
@@ -25,6 +28,7 @@
 <div id="players" style="display:none;">
   <div class="player-box">
     <h2>You</h2>
+    <img id="player-img" class="character-img" src="https://placehold.co/150x150?text=You" />
     <div>Health: <span id="player-health">0</span></div>
     <div class="bar"><div id="player-health-bar" class="health-bar" style="width:100%"></div></div>
     <div>Mana: <span id="player-mana">0</span></div>
@@ -32,6 +36,7 @@
   </div>
   <div class="player-box">
     <h2>Enemy</h2>
+    <img id="enemy-img" class="character-img" src="https://placehold.co/150x150?text=Enemy" />
     <div>Health: <span id="enemy-health">0</span></div>
     <div class="bar"><div id="enemy-health-bar" class="health-bar" style="width:100%"></div></div>
     <div>Mana: <span id="enemy-mana">0</span></div>
@@ -46,25 +51,28 @@
   <button id="mana-btn">Mana Boost (+15 Mana)</button>
 </div>
 
-<!-- Socket.io CDN link integrity'siz ve versiyon güncel -->
+<div id="log"></div>
+<div id="victory-msg">Victory!</div>
+<audio id="victory-audio" src="https://cdn.pixabay.com/download/audio/2022/08/10/audio_234f6a53d6.mp3?filename=small-victory-116165.mp3"></audio>
+
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
   const socket = io('https://pvpbackend.onrender.com');
-
   const statusDiv = document.getElementById('status');
   const playersDiv = document.getElementById('players');
   const gameDiv = document.getElementById('game');
+  const logDiv = document.getElementById('log');
+  const victoryMsg = document.getElementById('victory-msg');
+  const victoryAudio = document.getElementById('victory-audio');
 
   const playerHealthSpan = document.getElementById('player-health');
   const enemyHealthSpan = document.getElementById('enemy-health');
   const playerManaSpan = document.getElementById('player-mana');
   const enemyManaSpan = document.getElementById('enemy-mana');
-
   const playerHealthBar = document.getElementById('player-health-bar');
   const enemyHealthBar = document.getElementById('enemy-health-bar');
   const playerManaBar = document.getElementById('player-mana-bar');
   const enemyManaBar = document.getElementById('enemy-mana-bar');
-
   const attackBtn = document.getElementById('attack-btn');
   const defendBtn = document.getElementById('defend-btn');
   const skillBtn = document.getElementById('skill-btn');
@@ -73,7 +81,7 @@
   let isMyTurn = false;
   let player = null;
   let enemy = null;
-  let lastMoveTime = 0; // BURASI EKSİKTİ, ŞİMDİ EKLENDİ
+  let lastMoveTime = 0;
 
   function updateUI() {
     playerHealthSpan.textContent = player.health;
@@ -96,23 +104,25 @@
     statusDiv.textContent = text;
   }
 
-  socket.on('connect', () => {
-    setStatus('Connected. Waiting for opponent...');
-  });
+  function logAction(text) {
+    const entry = document.createElement('div');
+    entry.textContent = text;
+    logDiv.appendChild(entry);
+    logDiv.scrollTop = logDiv.scrollHeight;
+  }
 
-  socket.on('waitingForOpponent', () => {
-    setStatus('Waiting for opponent...');
-  });
+  socket.on('connect', () => setStatus('Connected. Waiting for opponent...'));
+  socket.on('waitingForOpponent', () => setStatus('Waiting for opponent...'));
 
   socket.on('gameStart', (data) => {
     player = data.player;
     enemy = data.enemy;
     isMyTurn = true;
-
     playersDiv.style.display = 'flex';
     gameDiv.style.display = 'block';
     updateUI();
     setStatus('Game started! Your turn.');
+    logDiv.innerHTML = '';
   });
 
   socket.on('moveConfirmed', (data) => {
@@ -120,6 +130,7 @@
     enemy = data.enemy;
     isMyTurn = false;
     updateUI();
+    logAction(`[You] used ${data.move}`);
     setStatus("Opponent's turn. Please wait...");
   });
 
@@ -128,24 +139,25 @@
     enemy = data.player;
     isMyTurn = true;
     updateUI();
+    logAction(`[Enemy] used ${data.move}`);
     setStatus('Your turn.');
   });
 
-  socket.on('errorMessage', (msg) => {
-    alert(msg);
-  });
+  socket.on('errorMessage', (msg) => alert(msg));
 
   socket.on('gameOver', (data) => {
-    if(data.winner === 'player') {
-      setStatus('You won the game! 🎉');
-    } else {
-      setStatus('You lost the game.');
-    }
     isMyTurn = false;
     updateUI();
+    if(data.winner === 'player') {
+      setStatus('You won the game! 🎉');
+      victoryMsg.style.display = 'block';
+      victoryAudio.play();
+    } else {
+      setStatus('You lost the game.');
+      logAction('You were defeated.');
+    }
   });
 
-  // Spam engelleme: 2 saniye beklemeden hamle yapma
   function canMakeMove() {
     const now = Date.now();
     if(now - lastMoveTime < 2000) {
@@ -170,6 +182,5 @@
   skillBtn.onclick = () => sendMove('skill');
   manaBtn.onclick = () => sendMove('mana');
 </script>
-
 </body>
 </html>
