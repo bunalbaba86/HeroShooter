@@ -70,6 +70,7 @@
     <button id="attackBtn" onclick="makeMove('attack')">Attack (Cost 10 Mana)</button>
     <button id="defendBtn" onclick="makeMove('defend')">Defend (Cost 5 Mana)</button>
     <button id="skillBtn" onclick="makeMove('skill')">Skill (Cost 20 Mana)</button>
+    <button id="manaBtn" onclick="makeMove('mana')">Mana Boost (Restore 15 Mana)</button>
   </div>
 
   <div id="log"></div>
@@ -85,6 +86,7 @@
       attack: document.getElementById('attackBtn'),
       defend: document.getElementById('defendBtn'),
       skill: document.getElementById('skillBtn'),
+      mana: document.getElementById('manaBtn'),
     };
 
     function log(msg) {
@@ -106,6 +108,9 @@
           if (attacker.mana >= 10) {
             attacker.mana -= 10;
             defender.health -= 15;
+            log(`${attacker === player ? 'You' : 'Bot'} attacked! -15 health to opponent.`);
+          } else {
+            log('Not enough mana to attack!');
           }
           break;
         case 'defend':
@@ -113,13 +118,24 @@
             attacker.mana -= 5;
             attacker.health += 10;
             if (attacker.health > 100) attacker.health = 100;
+            log(`${attacker === player ? 'You' : 'Bot'} defended and healed 10 health.`);
+          } else {
+            log('Not enough mana to defend!');
           }
           break;
         case 'skill':
           if (attacker.mana >= 20) {
             attacker.mana -= 20;
             defender.health -= 30;
+            log(`${attacker === player ? 'You' : 'Bot'} used skill! -30 health to opponent.`);
+          } else {
+            log('Not enough mana for skill!');
           }
+          break;
+        case 'mana':
+          attacker.mana += 15;
+          if (attacker.mana > 50) attacker.mana = 50; // max mana 50
+          log(`${attacker === player ? 'You' : 'Bot'} used Mana Boost, restored 15 mana.`);
           break;
       }
     }
@@ -127,10 +143,10 @@
     function botTurn() {
       if (bot.health <= 0) return;
 
-      const moves = ['attack', 'defend', 'skill'];
+      const moves = ['attack', 'defend', 'skill', 'mana'];
+
       let move;
 
-      // Choose a valid move based on mana
       do {
         move = moves[Math.floor(Math.random() * moves.length)];
       } while (
@@ -139,7 +155,6 @@
         (move === 'skill' && bot.mana < 20)
       );
 
-      log(`Bot used: ${move}`);
       applyMove(bot, player, move);
       updateUI();
 
@@ -167,17 +182,17 @@
         return;
       }
 
-      // Check mana cost
-      const manaCost = { attack: 10, defend: 5, skill: 20 };
-      if (player.mana < manaCost[move]) {
-        log('Not enough mana!');
-        return;
+      // Mana kontrolü (mana hareket için zorunlu değil çünkü mana hareketi restore de olabilir)
+      if (move !== 'mana') {
+        const manaCost = { attack: 10, defend: 5, skill: 20 };
+        if (player.mana < manaCost[move]) {
+          log('Not enough mana!');
+          return;
+        }
       }
 
       applyMove(player, bot, move);
       updateUI();
-
-      log(`You used: ${move}`);
 
       lastMoveTime = now;
       disableButtons();
@@ -190,7 +205,6 @@
       setTimeout(botTurn, 1500);
     }
 
-    // Başlangıçta butonlar aktif
     enableButtons();
     updateUI();
   </script>
