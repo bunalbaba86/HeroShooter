@@ -1,253 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Monster Clash - PvP Mode</title>
-  <style>
-    body {
-      background: #121212;
-      color: #eee;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    #player, #enemy {
-      border: 2px solid #eee;
-      margin: 10px auto;
-      padding: 15px;
-      width: 280px;
-      border-radius: 8px;
-      background: #222;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px 5px;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 6px;
-      background-color: #333;
-      color: #eee;
-      border: none;
-      user-select: none;
-      transition: background-color 0.2s ease;
-    }
-    button:disabled {
-      background-color: #555;
-      cursor: not-allowed;
-    }
-    button:hover:enabled {
-      background-color: #555;
-    }
-    #log {
-      margin-top: 20px;
-      height: 180px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      padding: 10px;
-      background: #222;
-      border-radius: 8px;
-      text-align: left;
-      max-width: 650px;
-      margin-left: auto;
-      margin-right: auto;
-      font-size: 14px;
-      line-height: 1.3;
-    }
-    #status {
-      margin: 10px auto 25px;
-      max-width: 650px;
-      font-weight: bold;
-      font-size: 18px;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>1v1 PvP Turn-based Game</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #222; color: #eee; text-align: center; }
+  #game { margin-top: 30px; }
+  button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+  #status { margin-top: 20px; font-size: 18px; }
+  #players { display: flex; justify-content: center; margin-top: 20px; }
+  .player-box { margin: 0 20px; padding: 10px; border: 1px solid #555; width: 150px; background: #333; }
+  .bar { height: 20px; background: #444; margin: 8px 0; border-radius: 5px; overflow: hidden; }
+  .health-bar { background: #e74c3c; height: 100%; }
+  .mana-bar { background: #3498db; height: 100%; }
+  button:disabled { background: #555; color: #999; cursor: not-allowed; }
+</style>
 </head>
 <body>
-  <h1>Monster Clash - PvP Mode</h1>
 
-  <div id="status">Connecting to server...</div>
+<h1>1v1 PvP Turn-Based Game</h1>
+<div id="status">Connecting to server...</div>
 
-  <div id="player">
-    <h2>Your Monster</h2>
-    <p id="playerHealth">Health: 100</p>
-    <p id="playerMana">Mana: 50</p>
+<div id="players" style="display:none;">
+  <div class="player-box">
+    <h2>You</h2>
+    <div>Health: <span id="player-health">0</span></div>
+    <div class="bar"><div id="player-health-bar" class="health-bar" style="width:100%"></div></div>
+    <div>Mana: <span id="player-mana">0</span></div>
+    <div class="bar"><div id="player-mana-bar" class="mana-bar" style="width:100%"></div></div>
   </div>
-
-  <div id="enemy">
-    <h2>Enemy Monster</h2>
-    <p id="enemyHealth">Health: 100</p>
-    <p id="enemyMana">Mana: 50</p>
+  <div class="player-box">
+    <h2>Enemy</h2>
+    <div>Health: <span id="enemy-health">0</span></div>
+    <div class="bar"><div id="enemy-health-bar" class="health-bar" style="width:100%"></div></div>
+    <div>Mana: <span id="enemy-mana">0</span></div>
+    <div class="bar"><div id="enemy-mana-bar" class="mana-bar" style="width:100%"></div></div>
   </div>
+</div>
 
-  <div>
-    <button id="attackBtn" onclick="makeMove('attack')">Attack (Cost 10 Mana)</button>
-    <button id="defendBtn" onclick="makeMove('defend')">Defend (Cost 5 Mana)</button>
-    <button id="skillBtn" onclick="makeMove('skill')">Skill (Cost 20 Mana)</button>
-    <button id="manaBtn" onclick="makeMove('mana')">Mana Boost (Restore 15 Mana)</button>
-  </div>
+<div id="game" style="display:none;">
+  <button id="attack-btn">Attack (Cost: 10 Mana)</button>
+  <button id="defend-btn">Defend (Cost: 5 Mana)</button>
+  <button id="skill-btn">Skill (Cost: 20 Mana)</button>
+  <button id="mana-btn">Mana Boost (+15 Mana)</button>
+</div>
 
-  <div id="log"></div>
+<script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+<script>
+  const socket = io('https://pvpbackend.onrender.com');
 
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"
-    integrity="sha384-XM4pf+mWtPJ8/nXo4LKUQt2ChznZLzI9tWt0Rb1Ol+yG2BDldPY6gSNYWDaJrl1Q"
-    crossorigin="anonymous"></script>
+  const statusDiv = document.getElementById('status');
+  const playersDiv = document.getElementById('players');
+  const gameDiv = document.getElementById('game');
 
-  <script>
-    const socket = io('https://pvpbackend.onrender.com'); // Backend URL'nı buraya yaz
+  const playerHealthSpan = document.getElementById('player-health');
+  const enemyHealthSpan = document.getElementById('enemy-health');
+  const playerManaSpan = document.getElementById('player-mana');
+  const enemyManaSpan = document.getElementById('enemy-mana');
 
-    // Oyuncu ve rakip can & mana durumu
-    let player = { health: 100, mana: 50 };
-    let enemy = { health: 100, mana: 50 };
+  const playerHealthBar = document.getElementById('player-health-bar');
+  const enemyHealthBar = document.getElementById('enemy-health-bar');
+  const playerManaBar = document.getElementById('player-mana-bar');
+  const enemyManaBar = document.getElementById('enemy-mana-bar');
 
-    const cooldownTime = 3000; // 3 saniye cooldown
-    let lastMoveTime = 0;
+  const attackBtn = document.getElementById('attack-btn');
+  const defendBtn = document.getElementById('defend-btn');
+  const skillBtn = document.getElementById('skill-btn');
+  const manaBtn = document.getElementById('mana-btn');
 
-    const buttons = {
-      attack: document.getElementById('attackBtn'),
-      defend: document.getElementById('defendBtn'),
-      skill: document.getElementById('skillBtn'),
-      mana: document.getElementById('manaBtn'),
-    };
+  let isMyTurn = false;
+  let player = null;
+  let enemy = null;
 
-    const statusDiv = document.getElementById('status');
-    const logDiv = document.getElementById('log');
+  function updateUI() {
+    playerHealthSpan.textContent = player.health;
+    enemyHealthSpan.textContent = enemy.health;
+    playerManaSpan.textContent = player.mana;
+    enemyManaSpan.textContent = enemy.mana;
 
-    // Butonları aç/kapat
-    function disableButtons() {
-      Object.values(buttons).forEach(btn => btn.disabled = true);
-    }
-    function enableButtons() {
-      Object.values(buttons).forEach(btn => btn.disabled = false);
-    }
+    playerHealthBar.style.width = player.health + '%';
+    enemyHealthBar.style.width = enemy.health + '%';
+    playerManaBar.style.width = (player.mana / 50 * 100) + '%';
+    enemyManaBar.style.width = (enemy.mana / 50 * 100) + '%';
 
-    // Log alanına mesaj ekle
-    function log(msg) {
-      const time = new Date().toLocaleTimeString();
-      logDiv.innerHTML += `[${time}] ${msg}<br>`;
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
+    // Butonları sıraya ve mana durumuna göre aktif/pasif yap
+    attackBtn.disabled = !isMyTurn || player.mana < 10;
+    defendBtn.disabled = !isMyTurn || player.mana < 5;
+    skillBtn.disabled = !isMyTurn || player.mana < 20;
+    manaBtn.disabled = !isMyTurn || player.mana >= 50;
+  }
 
-    // Arayüz güncelle
-    function updateUI() {
-      document.getElementById('playerHealth').textContent = `Health: ${player.health}`;
-      document.getElementById('playerMana').textContent = `Mana: ${player.mana}`;
-      document.getElementById('enemyHealth').textContent = `Health: ${enemy.health}`;
-      document.getElementById('enemyMana').textContent = `Mana: ${enemy.mana}`;
-    }
+  function setStatus(text) {
+    statusDiv.textContent = text;
+  }
 
-    // Hamle uygulama kontrolü (öncelik backend'de)
-    function canMakeMove() {
-      const now = Date.now();
-      if (now - lastMoveTime < cooldownTime) {
-        log('Please wait before making another move.');
-        return false;
-      }
-      return true;
-    }
+  socket.on('connect', () => {
+    setStatus('Connected. Waiting for opponent...');
+  });
 
-    // Hamle gönderme
-    function makeMove(move) {
-      if (!canMakeMove()) return;
+  socket.on('waitingForOpponent', () => {
+    setStatus('Waiting for opponent...');
+  });
 
-      // Mana kontrol (kendin yapma, backend de kontrol edecek, frontend iyileştirme)
-      const manaCost = { attack: 10, defend: 5, skill: 20, mana: 0 };
-      if (player.mana < manaCost[move]) {
-        log('Not enough mana!');
-        return;
-      }
+  socket.on('gameStart', (data) => {
+    player = data.player;
+    enemy = data.enemy;
+    isMyTurn = true; // Oyuncu 1 her zaman başlar backend'e göre
 
-      disableButtons();
-      lastMoveTime = Date.now();
-
-      // Backend'e hamleyi yolla
-      socket.emit('playerMove', { move });
-      log(`You used: ${move}`);
-    }
-
-    // Backend'ten oyunun başladığını ve başlangıç durumunu alıyoruz
-    socket.on('gameStart', (data) => {
-      player = data.player;
-      enemy = data.enemy;
-      statusDiv.textContent = 'Game started! Your turn.';
-      updateUI();
-      enableButtons();
-      log('Game started. Good luck!');
-    });
-
-    // Rakibin hamlesini al
-    socket.on('enemyMove', (data) => {
-      enemy = data.enemy;
-      player = data.player;
-      updateUI();
-      log(`Enemy used: ${data.move}`);
-
-      if (player.health <= 0) {
-        statusDiv.textContent = 'You lost!';
-        disableButtons();
-        return;
-      }
-      if (enemy.health <= 0) {
-        statusDiv.textContent = 'You won!';
-        disableButtons();
-        return;
-      }
-
-      statusDiv.textContent = 'Your turn.';
-      enableButtons();
-    });
-
-    // Oyuncunun hamlesi onaylandığında
-    socket.on('moveConfirmed', (data) => {
-      enemy = data.enemy;
-      player = data.player;
-      updateUI();
-
-      if (enemy.health <= 0) {
-        statusDiv.textContent = 'You won!';
-        disableButtons();
-      }
-    });
-
-    // Bağlantı durumu
-    socket.on('connect', () => {
-      statusDiv.textContent = 'Connected to server, waiting for opponent...';
-      log('Connected to server.');
-      disableButtons();
-    });
-
-    socket.on('disconnect', () => {
-      statusDiv.textContent = 'Disconnected from server.';
-      log('Disconnected from server.');
-      disableButtons();
-    });
-
-    socket.on('waitingForOpponent', () => {
-      statusDiv.textContent = 'Waiting for opponent...';
-      log('Waiting for opponent...');
-      disableButtons();
-    });
-
-    // Hata mesajları
-    socket.on('errorMessage', (msg) => {
-      log('Error: ' + msg);
-      enableButtons();
-    });
-
-    // Oyun bitti mesajı (backend'den)
-    socket.on('gameOver', (data) => {
-      if (data.winner === 'player') {
-        statusDiv.textContent = 'You won the game!';
-        log('You won the game!');
-      } else if (data.winner === 'enemy') {
-        statusDiv.textContent = 'You lost the game!';
-        log('You lost the game!');
-      } else {
-        statusDiv.textContent = 'Game ended in a draw.';
-        log('Game ended in a draw.');
-      }
-      disableButtons();
-    });
-
+    playersDiv.style.display = 'flex';
+    gameDiv.style.display = 'block';
     updateUI();
-  </script>
+    setStatus('Game started! Your turn.');
+  });
+
+  socket.on('moveConfirmed', (data) => {
+    player = data.player;
+    enemy = data.enemy;
+    isMyTurn = false;
+    updateUI();
+    setStatus("Opponent's turn. Please wait...");
+  });
+
+  socket.on('enemyMove', (data) => {
+    // Rakibin hamlesi geldiğinde sıra tekrar sana geçer
+    player = data.enemy;
+    enemy = data.player;
+    isMyTurn = true;
+    updateUI();
+    setStatus('Your turn.');
+  });
+
+  socket.on('errorMessage', (msg) => {
+    alert(msg);
+  });
+
+  socket.on('gameOver', (data) => {
+    if(data.winner === 'player') {
+      setStatus('You won the game! 🎉');
+    } else {
+      setStatus('You lost the game.');
+    }
+    isMyTurn = false;
+    updateUI();
+    // Oyunu yeniden başlatmak için sayfayı yenileyebilir veya yeniden bağlanabilirsin
+  });
+
+  function sendMove(move) {
+    if (!isMyTurn) {
+      alert("It's not your turn!");
+      return;
+    }
+    socket.emit('playerMove', { move });
+  }
+
+  attackBtn.onclick = () => sendMove('attack');
+  defendBtn.onclick = () => sendMove('defend');
+  skillBtn.onclick = () => sendMove('skill');
+  manaBtn.onclick = () => sendMove('mana');
+
+</script>
+
 </body>
 </html>
