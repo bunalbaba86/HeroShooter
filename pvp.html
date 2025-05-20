@@ -440,26 +440,26 @@
 
   // Chat gönderme
   function sendChatMessage() {
-    const msg = chatInput.value.trim();
-    if(msg === '') return;
-    socket.emit('chatMessage', { message: msg });
-    addChatMessage(You: ${msg}, 'you');
-    chatInput.value = '';
-    chatInput.focus();
-  }
+  const msg = chatInput.value.trim();
+  if(msg === '') return;
+  socket.emit('chatMessage', { message: msg });
+  addChatMessage(`You: ${msg}`, 'you');
+  chatInput.value = '';
+  chatInput.focus();
+}
 
   chatSendBtn.onclick = sendChatMessage;
   chatInput.addEventListener('keypress', e => {
     if(e.key === 'Enter') sendChatMessage();
   });
 
-  // Gelen chat mesajını al
-  socket.on('chatMessage', ({ message, fromIndex }) => {
-    // Kendi mesajımızı zaten gösterdik, diğer oyuncunun mesajı ise göster
-    if(fromIndex !== yourIndex) {
-      addChatMessage(Enemy: ${message}, 'enemy');
-    }
-  });
+ // Gelen chat mesajını al
+socket.on('chatMessage', ({ message, fromIndex }) => {
+  // Kendi mesajımızı zaten gösterdik, diğer oyuncunun mesajı ise göster
+  if(fromIndex !== yourIndex) {
+    addChatMessage(`Enemy: ${message}`, 'enemy');
+  }
+});
 </script>
 
 </body>
