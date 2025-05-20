@@ -294,7 +294,18 @@
   you.health = 0;
   enemy.health = Math.max(enemy.health, 0);
 
-  updateUI(); // UI güncelleme fonksiyonunu çağır
+  function updateUI() {
+  if (!you || !enemy) return;
+
+  document.getElementById('yourHealth').textContent = you.health;
+  document.getElementById('yourMana').textContent = you.mana;
+
+  document.getElementById('enemyHealth').textContent = enemy.health;
+  document.getElementById('enemyMana').textContent = enemy.mana;
+
+  // İstersen başka arayüz güncellemeleri de buraya eklenebilir.
+}
+
 
   // Victory / Defeat ekranını göster
   const resultDiv = document.getElementById('result');
