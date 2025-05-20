@@ -26,9 +26,10 @@
 
   <div class="log" id="log"></div>
 
-  <script src="/socket.io/socket.io.js"></script>
+  <!-- Socket.io Client -->
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script>
-    const socket = io();
+    const socket = io("https://pvpbackend.onrender.com");
     let roomId = '';
     let isMyTurn = false;
 
