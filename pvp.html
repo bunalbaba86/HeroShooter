@@ -197,11 +197,10 @@
   function updateBars() {
     if(!yourData || !enemyData) return;
 
-    // Health bars width %
+    // Sağlık ve mana bar genişlikleri güncelleniyor
     youHealthBar.style.width = yourData.health + '%';
     enemyHealthBar.style.width = enemyData.health + '%';
 
-    // Mana bars width %
     youManaBar.style.width = (yourData.mana / 50 * 100) + '%';
     enemyManaBar.style.width = (enemyData.mana / 50 * 100) + '%';
 
@@ -223,6 +222,11 @@
     statusDiv.textContent = text;
   }
 
+  function endGame() {
+    setButtonsDisabled(true);
+    yourTurn = false;
+  }
+
   socket.on('connect', () => {
     setStatus("Connected. Waiting for opponent...");
     setButtonsDisabled(true);
@@ -242,6 +246,7 @@
 
     setStatus(yourTurn ? "Your turn" : "Opponent's turn");
     setButtonsDisabled(!yourTurn);
+    victoryMessage.style.display = 'none';
   });
 
   socket.on('moveConfirmed', (data) => {
@@ -254,7 +259,6 @@
   });
 
   socket.on('enemyMove', (data) => {
-    // Rakip hareket etti, şimdi sizin sıranız
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = true;
@@ -267,81 +271,26 @@
     setStatus(msg);
   });
 
- socket.on('gameOver', ({ winner }) => {
-  // Önce sağlık bilgilerini güncelle
-  // winner = 'player' => odayı oluşturan 0. oyuncu kazandı
-  // Biz oyunculara göre kontrol yapıyoruz
+  socket.on('gameOver', ({ winner }) => {
+    endGame();
 
-  isGameOver = true;
+    let message = '';
+    let color = '';
 
-  // Victory/Defeat mesajlarını net ayır
-  let message = '';
-  let color = '';
+    if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
+      message = 'Victory!';
+      color = '#2ecc71'; // yeşil
+    } else {
+      message = 'Defeat!';
+      color = '#e74c3c'; // kırmızı
+    }
 
-  // Kendi indeksimiz: yourIndex
-  // Eğer kazanan oyuncu bizim indeksimizse Victory, değilse Defeat
-
-  if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
-    message = 'Victory!';
-    color = 'green';
-  } else {
-    message = 'Defeat!';
-    color = 'red';
-  }
-
-  // Sağlık bilgilerini (sen ve rakip) güncelle, moveConfirmed ve enemyMove'da zaten güncelleniyordu ama kesinlik olsun diye:
-  // Sağlıkları 0'a çek (muhtemelen zaten 0)
-  you.health = 0;
-  enemy.health = Math.max(enemy.health, 0);
-
-  function updateUI() {
-  if (!you || !enemy) return;
-
-  document.getElementById('yourHealth').textContent = you.health;
-  document.getElementById('yourMana').textContent = you.mana;
-
-  document.getElementById('enemyHealth').textContent = enemy.health;
-  document.getElementById('enemyMana').textContent = enemy.mana;
-
-  // İstersen başka arayüz güncellemeleri de buraya eklenebilir.
-}
-
-
-  // Victory / Defeat ekranını göster
-  const resultDiv = document.getElementById('result');
-  resultDiv.style.display = 'block';
-  resultDiv.style.color = color;
-  resultDiv.textContent = message;
-
-  // Ana menüye dönüş butonu ekle
-  if (!document.getElementById('backToMenuBtn')) {
-    const btn = document.createElement('button');
-    btn.id = 'backToMenuBtn';
-    btn.textContent = 'Ana Menüye Dön';
-    btn.style.marginTop = '10px';
-    btn.onclick = () => {
-      // Sonraki adım: PvP ekranı gizle, ana menüyü göster
-      document.getElementById('pvpContainer').style.display = 'none';
-      document.getElementById('result').style.display = 'none';
-      document.getElementById('backToMenuBtn').remove();
-      resetGameState();
-      document.getElementById('menuContainer').style.display = 'block';
-    };
-    resultDiv.appendChild(btn);
-  }
-});
-  
-function resetGameState() {
-  isGameOver = false;
-  yourTurn = false;
-  you = null;
-  enemy = null;
-  yourIndex = null;
-  document.getElementById('moveButtons').style.display = 'none';
-  document.getElementById('status').textContent = '';
-  updateUI();
-}
-
+    setStatus(message);
+    victoryMessage.textContent = message;
+    victoryMessage.style.color = color;
+    victoryMessage.style.display = 'block';
+    victorySound.play();
+  });
 
   function sendMove(move) {
     if(!yourTurn) {
@@ -356,5 +305,6 @@ function resetGameState() {
   skillBtn.onclick = () => sendMove('skill');
   manaBtn.onclick = () => sendMove('mana');
 </script>
+
 </body>
 </html>
