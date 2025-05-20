@@ -267,16 +267,70 @@
     setStatus(msg);
   });
 
-  socket.on('gameOver', (data) => {
-    setButtonsDisabled(true);
-    if (data.winner === 'player') {
-      victoryMessage.style.display = 'block';
-      victorySound.play();
-      setStatus("You won!");
-    } else {
-      setStatus("You lost!");
-    }
-  });
+ socket.on('gameOver', ({ winner }) => {
+  // Önce sağlık bilgilerini güncelle
+  // winner = 'player' => odayı oluşturan 0. oyuncu kazandı
+  // Biz oyunculara göre kontrol yapıyoruz
+
+  isGameOver = true;
+
+  // Victory/Defeat mesajlarını net ayır
+  let message = '';
+  let color = '';
+
+  // Kendi indeksimiz: yourIndex
+  // Eğer kazanan oyuncu bizim indeksimizse Victory, değilse Defeat
+
+  if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
+    message = 'Victory!';
+    color = 'green';
+  } else {
+    message = 'Defeat!';
+    color = 'red';
+  }
+
+  // Sağlık bilgilerini (sen ve rakip) güncelle, moveConfirmed ve enemyMove'da zaten güncelleniyordu ama kesinlik olsun diye:
+  // Sağlıkları 0'a çek (muhtemelen zaten 0)
+  you.health = 0;
+  enemy.health = Math.max(enemy.health, 0);
+
+  updateUI(); // UI güncelleme fonksiyonunu çağır
+
+  // Victory / Defeat ekranını göster
+  const resultDiv = document.getElementById('result');
+  resultDiv.style.display = 'block';
+  resultDiv.style.color = color;
+  resultDiv.textContent = message;
+
+  // Ana menüye dönüş butonu ekle
+  if (!document.getElementById('backToMenuBtn')) {
+    const btn = document.createElement('button');
+    btn.id = 'backToMenuBtn';
+    btn.textContent = 'Ana Menüye Dön';
+    btn.style.marginTop = '10px';
+    btn.onclick = () => {
+      // Sonraki adım: PvP ekranı gizle, ana menüyü göster
+      document.getElementById('pvpContainer').style.display = 'none';
+      document.getElementById('result').style.display = 'none';
+      document.getElementById('backToMenuBtn').remove();
+      resetGameState();
+      document.getElementById('menuContainer').style.display = 'block';
+    };
+    resultDiv.appendChild(btn);
+  }
+});
+  
+function resetGameState() {
+  isGameOver = false;
+  yourTurn = false;
+  you = null;
+  enemy = null;
+  yourIndex = null;
+  document.getElementById('moveButtons').style.display = 'none';
+  document.getElementById('status').textContent = '';
+  updateUI();
+}
+
 
   function sendMove(move) {
     if(!yourTurn) {
