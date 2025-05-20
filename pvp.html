@@ -40,6 +40,7 @@
     background: #444;
     border-radius: 8px;
     padding: 10px;
+    position: relative;
   }
   .player img.character {
     width: 100px;
@@ -131,7 +132,29 @@
     transform: translate(-50%, -50%);
     z-index: 11;
   }
-
+  .floating-damage {
+    position: absolute;
+    color: red;
+    font-weight: bold;
+    font-size: 18px;
+    animation: floatUp 1s ease-out;
+    pointer-events: none;
+    opacity: 0;
+  }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-30px); }
+  }
+  .shake {
+    animation: shake 0.4s;
+  }
+  @keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+  }
   /* CHAT STYLES */
   #chat-container {
     flex: 1;
@@ -186,8 +209,13 @@
 </style>
 </head>
 <body>
-
-<div id="container">
+<!-- Oyuncu ismi seçimi ekranı -->
+<div id="name-entry" style="position:absolute;top:0;left:0;width:100%;height:100%;background:#111;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;">
+  <h2 style="color:white;">Enter Your Name</h2>
+  <input type="text" id="player-name" placeholder="Your name" style="padding:10px;border-radius:5px;border:none;" />
+  <button onclick="startGame()" style="margin-top:10px;padding:10px 20px;">Start</button>
+</div>
+<div id="container" style="display:none;">
   <div id="game">
     <div class="player-area">
       <div class="player" id="you">
@@ -232,6 +260,10 @@
         <img src="mana.png" alt="Mana" /><br />
         Mana
       </button>
+      <button class="action-btn" id="hydra-btn" title="HYDRA (Burn for 4 turns)">
+        <img src="hydra.png" alt="Hydra" /><br />
+        HYDRA
+      </button>
     </div>
 
     <div id="status"></div>
@@ -251,216 +283,30 @@
   </div>
 </div>
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
 <script>
-  const socket = io("https://pvpbackend.onrender.com");
-
-  // Oyuncu ve düşman barları
-  const youHealthBar = document.getElementById('you-health');
-  const youManaBar = document.getElementById('you-mana');
-  const youHealthLabel = document.getElementById('you-health-label');
-  const youManaLabel = document.getElementById('you-mana-label');
-
-  const enemyHealthBar = document.getElementById('enemy-health');
-  const enemyManaBar = document.getElementById('enemy-mana');
-  const enemyHealthLabel = document.getElementById('enemy-health-label');
-  const enemyManaLabel = document.getElementById('enemy-mana-label');
-
-  const statusDiv = document.getElementById('status');
-  const victoryMessage = document.getElementById('victory-message');
-  const victorySound = document.getElementById('victory-sound');
-
-  const backToMenuBtn = document.getElementById('back-to-menu-btn');
-
-  const attackBtn = document.getElementById('attack-btn');
-  const defendBtn = document.getElementById('defend-btn');
-  const skillBtn = document.getElementById('skill-btn');
-  const manaBtn = document.getElementById('mana-btn');
-
-  // Chat elemanları
-  const chatMessages = document.getElementById('chat-messages');
-  const chatInput = document.getElementById('chat-input');
-  const chatSendBtn = document.getElementById('chat-send-btn');
-
-  let yourIndex = null;
-  let yourData = null;
-  let enemyData = null;
-  let yourTurn = false;
-
-  function updateBars() {
-    if(!yourData || !enemyData) return;
-
-    youHealthBar.style.width = yourData.health + '%';
-    enemyHealthBar.style.width = enemyData.health + '%';
-
-    youManaBar.style.width = (yourData.mana / 50 * 100) + '%';
-    enemyManaBar.style.width = (enemyData.mana / 50 * 100) + '%';
-
-    youHealthLabel.textContent = `Health: ${yourData.health}`;
-    enemyHealthLabel.textContent = `Health: ${enemyData.health}`;
-    youManaLabel.textContent = `Mana: ${yourData.mana}`;
-    enemyManaLabel.textContent = `Mana: ${enemyData.mana}`;
-
-  }
-
-  function setButtonsDisabled(disabled) {
-    attackBtn.disabled = disabled;
-    defendBtn.disabled = disabled;
-    skillBtn.disabled = disabled;
-    manaBtn.disabled = disabled;
-  }
-
-  function setStatus(text) {
-    statusDiv.textContent = text;
-  }
-
-  function endGame() {
-    setButtonsDisabled(true);
-    yourTurn = false;
-  }
-
-  function addChatMessage(text, sender) {
-    const div = document.createElement('div');
-    div.classList.add('chat-message');
-    if(sender === 'you') div.classList.add('you');
-    else if(sender === 'enemy') div.classList.add('enemy');
-    div.textContent = text;
-    chatMessages.appendChild(div);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-
-  socket.on('connect', () => {
-    setStatus("Connected. Waiting for opponent...");
-    setButtonsDisabled(true);
-  });
-
-  socket.on('waitingForOpponent', () => {
-    setStatus("Waiting for opponent...");
-    setButtonsDisabled(true);
-  });
-
-  socket.on('gameStart', (data) => {
-    yourIndex = data.yourIndex;
-    yourData = data.you;
-    enemyData = data.enemy;
-    yourTurn = yourIndex === 0;
-    updateBars();
-
-    setStatus(yourTurn ? "Your turn" : "Opponent's turn");
-    setButtonsDisabled(!yourTurn);
-    victoryMessage.style.display = 'none';
-    backToMenuBtn.style.display = 'none';
-
-    chatMessages.innerHTML = ''; // Temizle chat'i
-    chatInput.disabled = false;
-    chatSendBtn.disabled = false;
-  });
-
-  socket.on('moveConfirmed', (data) => {
-    yourData = data.you;
-    enemyData = data.enemy;
-    yourTurn = false;
-    updateBars();
-    setStatus("Opponent's turn");
-    setButtonsDisabled(true);
-  });
-
-  socket.on('enemyMove', (data) => {
-    yourData = data.you;
-    enemyData = data.enemy;
-    yourTurn = true;
-    updateBars();
-    setStatus("Your turn");
-    setButtonsDisabled(false);
-  });
-
-  socket.on('errorMessage', (msg) => {
-    setStatus(msg);
-  });
-
-  socket.on('gameOver', ({ winner }) => {
-    endGame();
-
-    let message = '';
-    let color = '';
-
-    if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
-      message = 'Victory!';
-      color = '#2ecc71';
-    } else {
-      message = 'Defeat!';
-      color = '#e74c3c';
-    }
-
-    setStatus(message);
-    victoryMessage.textContent = message;
-    victoryMessage.style.color = color;
-    victoryMessage.style.display = 'block';
-    victorySound.play();
-
-    backToMenuBtn.style.display = 'inline-block';
-
-    chatInput.disabled = true;
-    chatSendBtn.disabled = true;
-  });
-
-  function sendMove(move) {
-    if(!yourTurn) {
-      setStatus("Wait for your turn!");
-      return;
-    }
-    socket.emit('playerMove', { move });
-  }
-
-  attackBtn.onclick = () => sendMove('attack');
-  defendBtn.onclick = () => sendMove('defend');
-  skillBtn.onclick = () => sendMove('skill');
-  manaBtn.onclick = () => sendMove('mana');
-
- backToMenuBtn.onclick = () => {
-  window.location.href = 'index.html'; // Doğrudan index.html sayfasına yönlendir
-
-  // Bu satırları eğer yeniden yönlendirme olmadan oyun sıfırlanacaksa kullanırsınız.
-  // Ama window.location.href zaten sayfayı yeniden yüklüyor. Bu yüzden bu kodlara gerek yok.
-  /*
-  backToMenuBtn.style.display = 'none';
-  victoryMessage.style.display = 'none';
-  setStatus("Waiting for opponent...");
-  yourData = null;
-  enemyData = null;
-  yourTurn = false;
-  setButtonsDisabled(true);
-  chatMessages.innerHTML = '';
-  chatInput.disabled = true;
-  chatSendBtn.disabled = true;
-  location.reload();
-  */
-};
-
-
-  // Chat gönderme
-  function sendChatMessage() {
-  const msg = chatInput.value.trim();
-  if(msg === '') return;
-  socket.emit('chatMessage', { message: msg });
-  addChatMessage(`You: ${msg}`, 'you');
-  chatInput.value = '';
-  chatInput.focus();
+function startGame() {
+  const name = document.getElementById("player-name").value.trim();
+  if (!name) return alert("Please enter your name");
+  sessionStorage.setItem("playerName", name);
+  document.getElementById("name-entry").style.display = "none";
+  document.getElementById("container").style.display = "flex";
+  initSocket();
 }
 
-  chatSendBtn.onclick = sendChatMessage;
-  chatInput.addEventListener('keypress', e => {
-    if(e.key === 'Enter') sendChatMessage();
-  });
+function showDamage(targetId, damage) {
+  const player = document.getElementById(targetId);
+  const dmgText = document.createElement("div");
+  dmgText.classList.add("floating-damage");
+  dmgText.innerText = `-${damage}`;
+  player.appendChild(dmgText);
+  setTimeout(() => dmgText.remove(), 1000);
+}
 
- // Gelen chat mesajını al
-socket.on('chatMessage', ({ message, fromIndex }) => {
-  // Kendi mesajımızı zaten gösterdik, diğer oyuncunun mesajı ise göster
-  if(fromIndex !== yourIndex) {
-    addChatMessage(`Enemy: ${message}`, 'enemy');
-  }
-});
+function shake(targetId) {
+  const el = document.getElementById(targetId);
+  el.classList.add("shake");
+  setTimeout(() => el.classList.remove("shake"), 400);
+}
 </script>
-
 </body>
 </html>
