@@ -419,19 +419,24 @@
 
   backToMenuBtn.onclick = () => {
   window.location.href = 'index.html'; // Doğrudan index.html sayfasına yönlendir
+
+  // Bu satırları eğer yeniden yönlendirme olmadan oyun sıfırlanacaksa kullanırsınız.
+  // Ama window.location.href zaten sayfayı yeniden yüklüyor. Bu yüzden bu kodlara gerek yok.
+  /*
+  backToMenuBtn.style.display = 'none';
+  victoryMessage.style.display = 'none';
+  setStatus("Waiting for opponent...");
+  yourData = null;
+  enemyData = null;
+  yourTurn = false;
+  setButtonsDisabled(true);
+  chatMessages.innerHTML = '';
+  chatInput.disabled = true;
+  chatSendBtn.disabled = true;
+  location.reload();
+  */
 };
-    backToMenuBtn.style.display = 'none';
-    victoryMessage.style.display = 'none';
-    setStatus("Waiting for opponent...");
-    yourData = null;
-    enemyData = null;
-    yourTurn = false;
-    setButtonsDisabled(true);
-    chatMessages.innerHTML = '';
-    chatInput.disabled = true;
-    chatSendBtn.disabled = true;
-    location.reload();
-  };
+
 
   // Chat gönderme
   function sendChatMessage() {
