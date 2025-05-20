@@ -147,4 +147,17 @@
 
     function checkGameOver() {
       if (player.health <= 0) {
-        log
+        log('You lost!');
+        disableButtons();
+      } else if (enemy.health <= 0) {
+        log('You won!');
+        disableButtons();
+      }
+    }
+
+    // Başlangıçta butonlar devre dışı (rakip gelene kadar)
+    disableButtons();
+
+  </script>
+</body>
+</html>
