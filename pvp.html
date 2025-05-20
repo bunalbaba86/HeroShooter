@@ -183,12 +183,43 @@
   .chat-message.enemy {
     color: #e67e22;
   }
+  .floating-damage {
+  position: absolute;
+  font-size: 20px;
+  font-weight: bold;
+  color: red;
+  animation: floatUp 1s ease-out forwards;
+  display: none;
+  z-index: 5;
+}
+
+@keyframes floatUp {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
+.shake {
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  0% { transform: translate(1px, 0); }
+  25% { transform: translate(-2px, 0); }
+  50% { transform: translate(2px, 0); }
+  75% { transform: translate(-1px, 0); }
+  100% { transform: translate(0, 0); }
+}
+
 </style>
 </head>
 <body>
 
 <div id="container">
   <div id="game">
+<img src="you.jpg" alt="You" class="character" />
+<div class="floating-damage" id="player-damage"></div>
+<img src="enemy.jpg" alt="Enemy" class="character" />
+<div class="floating-damage" id="enemy-damage"></div>
     <div class="player-area">
       <div class="player" id="you">
         <img src="you.jpg" alt="You" class="character" />
@@ -363,6 +394,9 @@
     updateBars();
     setStatus("Opponent's turn");
     setButtonsDisabled(true);
+    showDamage("enemy-damage", "-20");
+shakeCharacter("enemy");
+
   });
 
   socket.on('enemyMove', (data) => {
@@ -372,6 +406,9 @@
     updateBars();
     setStatus("Your turn");
     setButtonsDisabled(false);
+    showDamage("player-damage", "-15");
+shakeCharacter("you");
+
   });
 
   socket.on('errorMessage', (msg) => {
@@ -460,6 +497,31 @@ socket.on('chatMessage', ({ message, fromIndex }) => {
     addChatMessage(`Enemy: ${message}`, 'enemy');
   }
 });
+  <script>
+  function showDamage(targetId, text) {
+    const el = document.getElementById(targetId);
+    el.textContent = text;
+    el.style.display = 'block';
+    el.style.left = '50%';
+    el.style.top = '40%';
+    el.style.transform = 'translateX(-50%)';
+
+    setTimeout(() => {
+      el.style.display = 'none';
+    }, 1000);
+  }
+
+  function shakeCharacter(targetId) {
+    const el = document.getElementById(targetId);
+    el.classList.add("shake");
+    setTimeout(() => el.classList.remove("shake"), 300);
+  }
+
+  // Örnek kullanım:
+  // showDamage("enemy-damage", "-20");
+  // shakeCharacter("enemy");
+</script>
+
 </script>
 
 </body>
