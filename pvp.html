@@ -296,11 +296,11 @@
     youManaBar.style.width = (yourData.mana / 50 * 100) + '%';
     enemyManaBar.style.width = (enemyData.mana / 50 * 100) + '%';
 
-    youHealthLabel.textContent = Health: ${yourData.health};
-    enemyHealthLabel.textContent = Health: ${enemyData.health};
+    youHealthLabel.textContent = `Health: ${yourData.health}`;
+    enemyHealthLabel.textContent = `Health: ${enemyData.health}`;
+    youManaLabel.textContent = `Mana: ${yourData.mana}`;
+    enemyManaLabel.textContent = `Mana: ${enemyData.mana}`;
 
-    youManaLabel.textContent = Mana: ${yourData.mana};
-    enemyManaLabel.textContent = Mana: ${enemyData.mana};
   }
 
   function setButtonsDisabled(disabled) {
