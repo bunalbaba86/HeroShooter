@@ -29,7 +29,11 @@
       color: #eee;
       border: none;
     }
-    button:hover {
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
       background-color: #555;
     }
     #log {
@@ -52,25 +56,36 @@
 
   <div id="player">
     <h2>Your Monster</h2>
-    <p id="playerPower">Power: ?</p>
+    <p id="playerHealth">Health: 100</p>
+    <p id="playerMana">Mana: 50</p>
   </div>
 
   <div id="bot">
     <h2>Bot's Monster</h2>
-    <p id="botPower">Power: ?</p>
+    <p id="botHealth">Health: 100</p>
+    <p id="botMana">Mana: 50</p>
   </div>
 
-  <button onclick="startBattle()">Start Battle</button>
+  <div>
+    <button id="attackBtn" onclick="makeMove('attack')">Attack (Cost 10 Mana)</button>
+    <button id="defendBtn" onclick="makeMove('defend')">Defend (Cost 5 Mana)</button>
+    <button id="skillBtn" onclick="makeMove('skill')">Skill (Cost 20 Mana)</button>
+  </div>
 
   <div id="log"></div>
 
   <script>
-    let playerPower = 0;
-    let botPower = 0;
+    let player = { health: 100, mana: 50 };
+    let bot = { health: 100, mana: 50 };
 
-    function getRandomPower() {
-      return Math.floor(Math.random() * 100) + 1; // 1-100 arası güç
-    }
+    const cooldownTime = 3000;
+    let lastMoveTime = 0;
+
+    const buttons = {
+      attack: document.getElementById('attackBtn'),
+      defend: document.getElementById('defendBtn'),
+      skill: document.getElementById('skillBtn'),
+    };
 
     function log(msg) {
       const logDiv = document.getElementById('log');
@@ -78,25 +93,106 @@
       logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    function startBattle() {
-      playerPower = getRandomPower();
-      botPower = getRandomPower();
+    function updateUI() {
+      document.getElementById('playerHealth').textContent = `Health: ${player.health}`;
+      document.getElementById('playerMana').textContent = `Mana: ${player.mana}`;
+      document.getElementById('botHealth').textContent = `Health: ${bot.health}`;
+      document.getElementById('botMana').textContent = `Mana: ${bot.mana}`;
+    }
 
-      document.getElementById('playerPower').textContent = `Power: ${playerPower}`;
-      document.getElementById('botPower').textContent = `Power: ${botPower}`;
-
-      log('Battle started!');
-      log(`Your monster power: ${playerPower}`);
-      log(`Bot monster power: ${botPower}`);
-
-      if (playerPower > botPower) {
-        log('You win!');
-      } else if (playerPower < botPower) {
-        log('You lose!');
-      } else {
-        log('It\'s a tie!');
+    function applyMove(attacker, defender, move) {
+      switch (move) {
+        case 'attack':
+          if (attacker.mana >= 10) {
+            attacker.mana -= 10;
+            defender.health -= 15;
+          }
+          break;
+        case 'defend':
+          if (attacker.mana >= 5) {
+            attacker.mana -= 5;
+            attacker.health += 10;
+            if (attacker.health > 100) attacker.health = 100;
+          }
+          break;
+        case 'skill':
+          if (attacker.mana >= 20) {
+            attacker.mana -= 20;
+            defender.health -= 30;
+          }
+          break;
       }
     }
+
+    function botTurn() {
+      if (bot.health <= 0) return;
+
+      const moves = ['attack', 'defend', 'skill'];
+      let move;
+
+      // Choose a valid move based on mana
+      do {
+        move = moves[Math.floor(Math.random() * moves.length)];
+      } while (
+        (move === 'attack' && bot.mana < 10) ||
+        (move === 'defend' && bot.mana < 5) ||
+        (move === 'skill' && bot.mana < 20)
+      );
+
+      log(`Bot used: ${move}`);
+      applyMove(bot, player, move);
+      updateUI();
+
+      if (player.health <= 0) {
+        log('You lost!');
+        disableButtons();
+      } else {
+        log('Your turn!');
+        enableButtons();
+      }
+    }
+
+    function disableButtons() {
+      Object.values(buttons).forEach(btn => btn.disabled = true);
+    }
+
+    function enableButtons() {
+      Object.values(buttons).forEach(btn => btn.disabled = false);
+    }
+
+    function makeMove(move) {
+      const now = Date.now();
+      if (now - lastMoveTime < cooldownTime) {
+        log('Wait before making another move!');
+        return;
+      }
+
+      // Check mana cost
+      const manaCost = { attack: 10, defend: 5, skill: 20 };
+      if (player.mana < manaCost[move]) {
+        log('Not enough mana!');
+        return;
+      }
+
+      applyMove(player, bot, move);
+      updateUI();
+
+      log(`You used: ${move}`);
+
+      lastMoveTime = now;
+      disableButtons();
+
+      if (bot.health <= 0) {
+        log('You won!');
+        return;
+      }
+
+      setTimeout(botTurn, 1500);
+    }
+
+    // Başlangıçta butonlar aktif
+    enableButtons();
+    updateUI();
   </script>
 </body>
 </html>
