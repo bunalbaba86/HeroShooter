@@ -46,6 +46,7 @@
   <button id="mana-btn">Mana Boost (+15 Mana)</button>
 </div>
 
+<!-- Socket.io CDN link integrity'siz ve versiyon güncel -->
 <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
 <script>
   const socket = io('https://pvpbackend.onrender.com');
@@ -72,6 +73,7 @@
   let isMyTurn = false;
   let player = null;
   let enemy = null;
+  let lastMoveTime = 0; // BURASI EKSİKTİ, ŞİMDİ EKLENDİ
 
   function updateUI() {
     playerHealthSpan.textContent = player.health;
@@ -84,7 +86,6 @@
     playerManaBar.style.width = (player.mana / 50 * 100) + '%';
     enemyManaBar.style.width = (enemy.mana / 50 * 100) + '%';
 
-    // Butonları sıraya ve mana durumuna göre aktif/pasif yap
     attackBtn.disabled = !isMyTurn || player.mana < 10;
     defendBtn.disabled = !isMyTurn || player.mana < 5;
     skillBtn.disabled = !isMyTurn || player.mana < 20;
@@ -106,7 +107,7 @@
   socket.on('gameStart', (data) => {
     player = data.player;
     enemy = data.enemy;
-    isMyTurn = true; // Oyuncu 1 her zaman başlar backend'e göre
+    isMyTurn = true;
 
     playersDiv.style.display = 'flex';
     gameDiv.style.display = 'block';
@@ -123,7 +124,6 @@
   });
 
   socket.on('enemyMove', (data) => {
-    // Rakibin hamlesi geldiğinde sıra tekrar sana geçer
     player = data.enemy;
     enemy = data.player;
     isMyTurn = true;
@@ -143,14 +143,25 @@
     }
     isMyTurn = false;
     updateUI();
-    // Oyunu yeniden başlatmak için sayfayı yenileyebilir veya yeniden bağlanabilirsin
   });
+
+  // Spam engelleme: 2 saniye beklemeden hamle yapma
+  function canMakeMove() {
+    const now = Date.now();
+    if(now - lastMoveTime < 2000) {
+      alert("Please wait before making another move.");
+      return false;
+    }
+    lastMoveTime = now;
+    return true;
+  }
 
   function sendMove(move) {
     if (!isMyTurn) {
       alert("It's not your turn!");
       return;
     }
+    if (!canMakeMove()) return;
     socket.emit('playerMove', { move });
   }
 
@@ -158,7 +169,6 @@
   defendBtn.onclick = () => sendMove('defend');
   skillBtn.onclick = () => sendMove('skill');
   manaBtn.onclick = () => sendMove('mana');
-
 </script>
 
 </body>
