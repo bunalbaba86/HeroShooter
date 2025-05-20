@@ -1,160 +1,295 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PvP Battle</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #1c1c1c;
-      color: white;
-      text-align: center;
-    }
-    #game {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 30px;
-    }
-    .bar {
-      width: 300px;
-      height: 20px;
-      background: gray;
-      border-radius: 10px;
-      margin: 5px auto;
-      overflow: hidden;
-    }
-    .health {
-      background: red;
-      height: 100%;
-    }
-    .mana {
-      background: blue;
-      height: 100%;
-    }
-    .character {
-      width: 100px;
-      height: 100px;
-      background: url('you.jpg') center/cover;
-      margin-bottom: 10px;
-    }
-    .enemy {
-      background-image: url('enemy.jpg');
-    }
-    .actions {
-      display: flex;
-      gap: 15px;
-      margin-top: 20px;
-    }
-    .action {
-      cursor: pointer;
-      width: 60px;
-      height: 60px;
-      background-size: cover;
-      border: 2px solid white;
-      border-radius: 10px;
-    }
-    #status {
-      margin-top: 20px;
-      font-size: 18px;
-      min-height: 24px;
-    }
-    #victory {
-      font-size: 36px;
-      color: yellow;
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>1v1 PvP Turn-Based Game</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+  #game {
+    max-width: 600px;
+    margin: 20px auto;
+    background: #333;
+    border-radius: 10px;
+    padding: 20px;
+    position: relative;
+  }
+  .player-area {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+  .player {
+    width: 45%;
+    background: #444;
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .player img.character {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #666;
+    margin-bottom: 10px;
+  }
+  .bar {
+    background: #555;
+    border-radius: 5px;
+    height: 20px;
+    margin-bottom: 10px;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.3s ease;
+  }
+  .health-fill {
+    background: #e74c3c;
+  }
+  .mana-fill {
+    background: #3498db;
+  }
+  .bar-label {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    font-weight: bold;
+    top: 0;
+    color: #fff;
+  }
+  #actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+  button.action-btn {
+    background: #555;
+    border: none;
+    border-radius: 8px;
+    width: 80px;
+    height: 80px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+  }
+  button.action-btn:disabled {
+    background: #222;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  button.action-btn img {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 5px;
+  }
+  #status {
+    margin-top: 20px;
+    font-size: 18px;
+    height: 24px;
+  }
+  #victory-message {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2ecc71;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    padding: 20px 40px;
+    border-radius: 12px;
+    display: none;
+    z-index: 10;
+  }
+</style>
 </head>
 <body>
-  <h1>PvP Battle</h1>
-  <div id="game">
-    <div class="character" id="enemyChar"></div>
-    <div class="bar"><div id="enemyHealth" class="health"></div></div>
-    <div class="bar"><div id="enemyMana" class="mana"></div></div>
 
-    <hr style="width: 80%; margin: 20px 0;">
-
-    <div class="character" id="youChar"></div>
-    <div class="bar"><div id="yourHealth" class="health"></div></div>
-    <div class="bar"><div id="yourMana" class="mana"></div></div>
-
-    <div class="actions">
-      <div class="action" id="attackBtn" style="background-image: url('attack.png');" title="Attack"></div>
-      <div class="action" id="defendBtn" style="background-image: url('defend.png');" title="Defend"></div>
-      <div class="action" id="skillBtn" style="background-image: url('skill.png');" title="Skill"></div>
-      <div class="action" id="manaBtn" style="background-image: url('mana.png');" title="Recharge Mana"></div>
+<div id="game">
+  <div class="player-area">
+    <div class="player" id="you">
+      <img src="you.png" alt="You" class="character" />
+      <div class="bar" title="Health">
+        <div class="bar-fill health-fill" id="you-health" style="width: 100%;"></div>
+        <div class="bar-label" id="you-health-label">Health: 100</div>
+      </div>
+      <div class="bar" title="Mana">
+        <div class="bar-fill mana-fill" id="you-mana" style="width: 100%;"></div>
+        <div class="bar-label" id="you-mana-label">Mana: 50</div>
+      </div>
     </div>
 
-    <div id="status">Connecting to server...</div>
-    <div id="victory">Victory!</div>
+    <div class="player" id="enemy">
+      <img src="enemy.png" alt="Enemy" class="character" />
+      <div class="bar" title="Health">
+        <div class="bar-fill health-fill" id="enemy-health" style="width: 100%;"></div>
+        <div class="bar-label" id="enemy-health-label">Health: 100</div>
+      </div>
+      <div class="bar" title="Mana">
+        <div class="bar-fill mana-fill" id="enemy-mana" style="width: 100%;"></div>
+        <div class="bar-label" id="enemy-mana-label">Mana: 50</div>
+      </div>
+    </div>
   </div>
 
-  <audio id="victorySound" src="victory.mp3"></audio>
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-  <script>
-    const socket = io("http://localhost:10000");
+  <div id="actions">
+    <button class="action-btn" id="attack-btn" title="Attack (Costs 10 Mana)">
+      <img src="attack.png" alt="Attack" /><br />
+      Attack
+    </button>
+    <button class="action-btn" id="defend-btn" title="Defend (Costs 5 Mana)">
+      <img src="defend.png" alt="Defend" /><br />
+      Defend
+    </button>
+    <button class="action-btn" id="skill-btn" title="Skill (Costs 20 Mana)">
+      <img src="skill.png" alt="Skill" /><br />
+      Skill
+    </button>
+    <button class="action-btn" id="mana-btn" title="Mana (Restore 15 Mana)">
+      <img src="mana.png" alt="Mana" /><br />
+      Mana
+    </button>
+  </div>
 
-    let yourIndex = 0;
-    let you = {}, enemy = {};
+  <div id="status"></div>
 
-    function updateBars() {
-      document.getElementById("yourHealth").style.width = you.health + "%";
-      document.getElementById("yourMana").style.width = you.mana * 2 + "%";
-      document.getElementById("enemyHealth").style.width = enemy.health + "%";
-      document.getElementById("enemyMana").style.width = enemy.mana * 2 + "%";
+  <div id="victory-message">Victory!</div>
+  <audio id="victory-sound" src="victory.mp3" preload="auto"></audio>
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
+<script>
+  const socket = io("https://pvpbackend.onrender.com");
+
+  const youHealthBar = document.getElementById('you-health');
+  const youManaBar = document.getElementById('you-mana');
+  const youHealthLabel = document.getElementById('you-health-label');
+  const youManaLabel = document.getElementById('you-mana-label');
+
+  const enemyHealthBar = document.getElementById('enemy-health');
+  const enemyManaBar = document.getElementById('enemy-mana');
+  const enemyHealthLabel = document.getElementById('enemy-health-label');
+  const enemyManaLabel = document.getElementById('enemy-mana-label');
+
+  const statusDiv = document.getElementById('status');
+  const victoryMessage = document.getElementById('victory-message');
+  const victorySound = document.getElementById('victory-sound');
+
+  const attackBtn = document.getElementById('attack-btn');
+  const defendBtn = document.getElementById('defend-btn');
+  const skillBtn = document.getElementById('skill-btn');
+  const manaBtn = document.getElementById('mana-btn');
+
+  let yourIndex = null;
+  let yourData = null;
+  let enemyData = null;
+  let yourTurn = false;
+
+  function updateBars() {
+    if(!yourData || !enemyData) return;
+
+    // Health bars width %
+    youHealthBar.style.width = yourData.health + '%';
+    enemyHealthBar.style.width = enemyData.health + '%';
+
+    // Mana bars width %
+    youManaBar.style.width = (yourData.mana / 50 * 100) + '%';
+    enemyManaBar.style.width = (enemyData.mana / 50 * 100) + '%';
+
+    youHealthLabel.textContent = `Health: ${yourData.health}`;
+    enemyHealthLabel.textContent = `Health: ${enemyData.health}`;
+
+    youManaLabel.textContent = `Mana: ${yourData.mana}`;
+    enemyManaLabel.textContent = `Mana: ${enemyData.mana}`;
+  }
+
+  function setButtonsDisabled(disabled) {
+    attackBtn.disabled = disabled;
+    defendBtn.disabled = disabled;
+    skillBtn.disabled = disabled;
+    manaBtn.disabled = disabled;
+  }
+
+  function setStatus(text) {
+    statusDiv.textContent = text;
+  }
+
+  socket.on('connect', () => {
+    setStatus("Connected. Waiting for opponent...");
+    setButtonsDisabled(true);
+  });
+
+  socket.on('waitingForOpponent', () => {
+    setStatus("Waiting for opponent...");
+    setButtonsDisabled(true);
+  });
+
+  socket.on('gameStart', (data) => {
+    yourIndex = data.yourIndex;
+    yourData = data.you;
+    enemyData = data.enemy;
+    yourTurn = yourIndex === 0; // İlk oyuncu başlar
+    updateBars();
+
+    setStatus(yourTurn ? "Your turn" : "Opponent's turn");
+    setButtonsDisabled(!yourTurn);
+  });
+
+  socket.on('moveConfirmed', (data) => {
+    yourData = data.you;
+    enemyData = data.enemy;
+    yourTurn = false;
+    updateBars();
+    setStatus("Opponent's turn");
+    setButtonsDisabled(true);
+  });
+
+  socket.on('enemyMove', (data) => {
+    // Rakip hareket etti, şimdi sizin sıranız
+    yourData = data.you;
+    enemyData = data.enemy;
+    yourTurn = true;
+    updateBars();
+    setStatus("Your turn");
+    setButtonsDisabled(false);
+  });
+
+  socket.on('errorMessage', (msg) => {
+    setStatus(msg);
+  });
+
+  socket.on('gameOver', (data) => {
+    setButtonsDisabled(true);
+    if (data.winner === 'player') {
+      victoryMessage.style.display = 'block';
+      victorySound.play();
+      setStatus("You won!");
+    } else {
+      setStatus("You lost!");
     }
+  });
 
-    function setStatus(msg) {
-      document.getElementById("status").textContent = msg;
+  function sendMove(move) {
+    if(!yourTurn) {
+      setStatus("Wait for your turn!");
+      return;
     }
+    socket.emit('playerMove', { move });
+  }
 
-    function setVictory() {
-      document.getElementById("victory").style.display = 'block';
-      document.getElementById("victorySound").play();
-    }
-
-    function makeMove(move) {
-      setStatus("Sending move: " + move);
-      socket.emit("playerMove", { move });
-    }
-
-    document.getElementById("attackBtn").onclick = () => makeMove("attack");
-    document.getElementById("defendBtn").onclick = () => makeMove("defend");
-    document.getElementById("skillBtn").onclick = () => makeMove("skill");
-    document.getElementById("manaBtn").onclick = () => makeMove("mana");
-
-    socket.on("waitingForOpponent", () => setStatus("Waiting for opponent..."));
-
-    socket.on("gameStart", (data) => {
-      yourIndex = data.yourIndex;
-      you = data.you;
-      enemy = data.enemy;
-      setStatus("Your turn!");
-      updateBars();
-    });
-
-    socket.on("moveConfirmed", (data) => {
-      you = data.you;
-      enemy = data.enemy;
-      updateBars();
-      setStatus("Waiting for enemy...");
-    });
-
-    socket.on("enemyMove", (data) => {
-      you = data.you;
-      enemy = data.enemy;
-      updateBars();
-      setStatus("Your turn!");
-    });
-
-    socket.on("errorMessage", msg => setStatus(msg));
-
-    socket.on("gameOver", ({ winner }) => {
-      setVictory();
-      setStatus(winner ? "You won!" : "You lost.");
-    });
-  </script>
+  attackBtn.onclick = () => sendMove('attack');
+  defendBtn.onclick = () => sendMove('defend');
+  skillBtn.onclick = () => sendMove('skill');
+  manaBtn.onclick = () => sendMove('mana');
+</script>
 </body>
 </html>
