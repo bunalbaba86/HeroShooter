@@ -34,7 +34,7 @@
     display: flex;
     justify-content: space-around;
     margin-bottom: 20px;
-    <div id="damage-indicator" style="
+    
   position: absolute;
   top: 50%;
   left: 50%;
@@ -114,11 +114,26 @@
     height: 40px;
     margin-bottom: 5px;
   }
-  #status {
+  #status { 
     margin-top: 20px;
     font-size: 18px;
     height: 24px;
   }
+    #damage-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  color: #e74c3c;
+  text-shadow: 1px 1px 3px black;
+  display: none;
+  pointer-events: none;
+  z-index: 20;
+}
+    <div id="damage-indicator">-10</div>
+
   #victory-message {
     font-size: 36px;
     font-weight: bold;
