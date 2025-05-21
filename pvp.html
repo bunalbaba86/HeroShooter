@@ -489,7 +489,6 @@
   chatInput.value = '';
   chatInput.focus();
 }
-
   chatSendBtn.onclick = sendChatMessage;
   chatInput.addEventListener('keypress', e => {
     if(e.key === 'Enter') sendChatMessage();
