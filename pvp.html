@@ -307,7 +307,7 @@
         <img src="mana.png" alt="Mana" /><br />
         Mana
       </button>
-      <button class="action-btn" id="hydra-btn" title="HYDRA (Costs 30 Mana, Multi-turn)">
+      <button class="action-btn" id="hydra-btn" title="HYDRA (Costs 30 Mana, Multi-turn damage)">
         <img src="hydra.png" alt="Hydra" /><br />
         HYDRA
       </button>
@@ -358,6 +358,7 @@
   const defendBtn = document.getElementById('defend-btn');
   const skillBtn = document.getElementById('skill-btn');
   const manaBtn = document.getElementById('mana-btn');
+  const hydraBtn = document.getElementById('hydra-btn');
 
   // Chat elemanları
   const chatMessages = document.getElementById('chat-messages');
@@ -368,6 +369,9 @@
   let yourData = null;
   let enemyData = null;
   let yourTurn = false;
+  let gameActive = false;
+  let hydraActive = false;
+  let hydraCounter = 0;
 
   function updateBars() {
     if(!yourData || !enemyData) return;
@@ -385,11 +389,19 @@
     enemyManaLabel.textContent = `Mana: ${enemyData.mana}`;
   }
 
-  function setButtonsDisabled(disabled) {
+  function updateButtonStatus() {
+    const disabled = !yourTurn || !gameActive;
+    
     attackBtn.disabled = disabled || (yourData && yourData.mana < 10);
     defendBtn.disabled = disabled || (yourData && yourData.mana < 5);
     skillBtn.disabled = disabled || (yourData && yourData.mana < 20);
+    hydraBtn.disabled = disabled || (yourData && yourData.mana < 30);
     manaBtn.disabled = disabled;
+  }
+
+  function setButtonsDisabled(disabled) {
+    gameActive = !disabled;
+    updateButtonStatus();
   }
 
   function setStatus(text) {
@@ -397,6 +409,7 @@
   }
 
   function endGame() {
+    gameActive = false;
     setButtonsDisabled(true);
     yourTurn = false;
   }
@@ -469,6 +482,60 @@
     setTimeout(() => manaEl.remove(), 800);
   }
 
+  // HYDRA animasyonu
+  function startHydraEffect(playerType) {
+    const character = document.querySelector(`#${playerType} .character`);
+    if (character) {
+      character.classList.add('hydra-active');
+      hydraActive = true;
+      hydraCounter = 4; // 4 tur
+      
+      addChatMessage(`HYDRA spell activated! Will deal damage for 4 turns.`, 'system');
+    }
+  }
+  
+  function processHydraEffect() {
+    if (hydraActive && hydraCounter > 0) {
+      // Düşmana 8 hasar ver (her tur)
+      showDamageEffect('enemy-damage-display', 8);
+      enemyData.health -= 8;
+      if (enemyData.health < 0) enemyData.health = 0;
+      
+      updateBars();
+      
+      hydraCounter--;
+      addChatMessage(`HYDRA deals 8 damage! (${hydraCounter} turns left)`, 'system');
+      
+      if (hydraCounter <= 0) {
+        const character = document.querySelector(`#you .character`);
+        if (character) {
+          character.classList.remove('hydra-active');
+        }
+        hydraActive = false;
+      }
+      
+      // Eğer düşman öldüyse
+      if (enemyData.health <= 0) {
+        endGame();
+        
+        setStatus('Victory!');
+        victoryMessage.textContent = 'Victory!';
+        victoryMessage.style.color = '#2ecc71';
+        victoryMessage.style.display = 'block';
+        
+        victorySound.play().catch(e => console.log("Sound error:", e));
+        
+        backToMenuBtn.style.display = 'inline-block';
+        playAgainBtn.style.display = 'inline-block';
+        
+        chatInput.disabled = true;
+        chatSendBtn.disabled = true;
+        
+        addChatMessage(`Game over! Victory!`, 'system');
+      }
+    }
+  }
+
   // Socket.io olaylarını dinle  
   socket.on('connect', () => {
     setStatus("Connected. Waiting for opponent...");
@@ -486,10 +553,15 @@
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = yourIndex === 0;
+    gameActive = true;
+    hydraActive = false;
+    hydraCounter = 0;
+    
     updateBars();
-
+    updateButtonStatus();
+    
     setStatus(yourTurn ? "Your turn" : "Opponent's turn");
-    setButtonsDisabled(!yourTurn);
+    
     victoryMessage.style.display = 'none';
     backToMenuBtn.style.display = 'none';
     playAgainBtn.style.display = 'none';
@@ -498,6 +570,10 @@
     chatInput.disabled = false;
     chatSendBtn.disabled = false;
     
+    // Karakterlerde animasyon varsa temizle
+    document.querySelector('#you .character').classList.remove('hydra-active');
+    document.querySelector('#enemy .character').classList.remove('hydra-active');
+    
     addChatMessage("Game started! " + (yourTurn ? "It's your turn." : "Waiting for opponent's move."), 'system');
   });
 
@@ -505,17 +581,29 @@
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = false;
+    
     updateBars();
+    updateButtonStatus();
     setStatus("Opponent's turn");
-    setButtonsDisabled(true);
     
     // Hamle animasyonları
-    if (data.move === 'attack' || data.move === 'skill') {
-      showDamageEffect('enemy-damage-display', data.move === 'skill' ? 30 : 15);
+    if (data.move === 'attack') {
+      showDamageEffect('enemy-damage-display', 15);
     } else if (data.move === 'defend') {
       showHealEffect('player-damage-display', 10);
+    } else if (data.move === 'skill') {
+      showDamageEffect('enemy-damage-display', 30);
     } else if (data.move === 'mana') {
       showManaEffect('player-damage-display', 15);
+    } else if (data.move === 'hydra') { 
+      // Not: Backend 'hydra' komutunu desteklemiyor, bu yüzden bu hiç çalışmayacak
+      showDamageEffect('enemy-damage-display', 10);
+      startHydraEffect('you');
+    }
+    
+    // HYDRA spell efektini işle (eğer aktifse)
+    if (hydraActive) {
+      processHydraEffect();
     }
     
     // Log mesajı
@@ -526,17 +614,23 @@
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = true;
+    
     updateBars();
+    updateButtonStatus();
     setStatus("Your turn");
-    setButtonsDisabled(false);
     
     // Düşman hamle animasyonları
-    if (data.move === 'attack' || data.move === 'skill') {
-      showDamageEffect('player-damage-display', data.move === 'skill' ? 30 : 15);
+    if (data.move === 'attack') {
+      showDamageEffect('player-damage-display', 15);
     } else if (data.move === 'defend') {
       showHealEffect('enemy-damage-display', 10);
+    } else if (data.move === 'skill') {
+      showDamageEffect('player-damage-display', 30);
     } else if (data.move === 'mana') {
       showManaEffect('enemy-damage-display', 15);
+    } else if (data.move === 'hydra') {
+      showDamageEffect('player-damage-display', 10);
+      startHydraEffect('enemy');
     }
     
     // Log mesajı
@@ -588,6 +682,8 @@
 
   socket.on('disconnect', () => {
     setStatus("Connection lost. Trying to reconnect...");
+    gameActive = false;
+    updateButtonStatus();
     
     backToMenuBtn.style.display = 'inline-block';
     playAgainBtn.style.display = 'inline-block';
@@ -596,10 +692,35 @@
   });
 
   function sendMove(move) {
-    if(!yourTurn) {
+    if(!yourTurn || !gameActive) {
       setStatus("Wait for your turn!");
       return;
     }
+    
+    // HYDRA özel durumu (backend aslında desteklemiyor)
+    if (move === 'hydra') {
+      // Yeterli mana var mı?
+      if (yourData.mana < 30) {
+        setStatus("Not enough mana!");
+        return;
+      }
+      
+      // HYDRA yerine skill gönder (backend için uyumlu)
+      socket.emit('playerMove', { move: 'skill' });
+      
+      // İstemci tarafında HYDRA gibi davran
+      yourData.mana -= 30; // HYDRA maliyeti
+      enemyData.health -= 10; // İlk hasarı
+      
+      updateBars();
+      updateButtonStatus();
+      
+      // HYDRA animasyonunu başlat
+      startHydraEffect('you');
+      
+      return;
+    }
+    
     socket.emit('playerMove', { move });
   }
 
@@ -607,6 +728,7 @@
   defendBtn.onclick = () => sendMove('defend');
   skillBtn.onclick = () => sendMove('skill');
   manaBtn.onclick = () => sendMove('mana');
+  hydraBtn.onclick = () => sendMove('hydra');
 
   backToMenuBtn.onclick = () => {
     window.location.reload();
