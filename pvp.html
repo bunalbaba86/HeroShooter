@@ -47,16 +47,17 @@
       border-radius: 50%;
       background: #666;
       margin-bottom: 10px;
+      transition: transform 0.2s;
     }
     .shake {
       animation: shake 0.3s;
     }
     @keyframes shake {
-      0% { transform: translate(0, 0); }
+      0% { transform: translate(0px, 0px); }
       25% { transform: translate(-5px, 0); }
       50% { transform: translate(5px, 0); }
       75% { transform: translate(-5px, 0); }
-      100% { transform: translate(0, 0); }
+      100% { transform: translate(0px, 0); }
     }
     .bar {
       background: #555;
@@ -86,15 +87,16 @@
     }
     #damage-indicator {
       position: absolute;
-      top: 40%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 32px;
+      font-size: 48px;
       font-weight: bold;
-      color: #ffeb3b;
-      text-shadow: 1px 1px 2px black;
+      color: #e74c3c;
+      text-shadow: 1px 1px 3px black;
       display: none;
-      z-index: 100;
+      pointer-events: none;
+      z-index: 20;
     }
     #actions {
       display: flex;
@@ -153,7 +155,8 @@
       transform: translate(-50%, -50%);
       z-index: 11;
     }
-    /* CHAT */
+
+    /* CHAT STYLES */
     #chat-container {
       flex: 1;
       background: #222;
@@ -180,7 +183,7 @@
       border: none;
       border-radius: 4px;
       font-size: 14px;
-      max-length: 20;
+      maxlength: 20;
     }
     #chat-send-btn {
       background: #3498db;
@@ -212,59 +215,104 @@
     <div id="game">
       <div class="player-area">
         <div class="player" id="you">
-          <img src="you.jpg" alt="You" class="character" id="you-img"/>
+          <img src="you.jpg" alt="You" class="character" id="you-img" />
           <div class="bar" title="Health">
-            <div class="bar-fill health-fill" id="you-health"></div>
-            <div class="bar-label" id="you-health-label"></div>
+            <div class="bar-fill health-fill" id="you-health" style="width: 100%;"></div>
+            <div class="bar-label" id="you-health-label">Health: 100</div>
           </div>
           <div class="bar" title="Mana">
-            <div class="bar-fill mana-fill" id="you-mana"></div>
-            <div class="bar-label" id="you-mana-label"></div>
+            <div class="bar-fill mana-fill" id="you-mana" style="width: 100%;"></div>
+            <div class="bar-label" id="you-mana-label">Mana: 50</div>
           </div>
         </div>
+
         <div class="player" id="enemy">
-          <img src="enemy.jpg" alt="Enemy" class="character" id="enemy-img"/>
+          <img src="enemy.jpg" alt="Enemy" class="character" id="enemy-img" />
           <div class="bar" title="Health">
-            <div class="bar-fill health-fill" id="enemy-health"></div>
-            <div class="bar-label" id="enemy-health-label"></div>
+            <div class="bar-fill health-fill" id="enemy-health" style="width: 100%;"></div>
+            <div class="bar-label" id="enemy-health-label">Health: 100</div>
           </div>
           <div class="bar" title="Mana">
-            <div class="bar-fill mana-fill" id="enemy-mana"></div>
-            <div class="bar-label" id="enemy-mana-label"></div>
+            <div class="bar-fill mana-fill" id="enemy-mana" style="width: 100%;"></div>
+            <div class="bar-label" id="enemy-mana-label">Mana: 50</div>
           </div>
         </div>
       </div>
 
       <div id="actions">
-        <button class="action-btn" id="attack-btn" title="Attack (10 Mana)">
-          <img src="attack.png" alt="Attack"/><br />Attack
+        <button class="action-btn" id="attack-btn" title="Attack (Costs 10 Mana)">
+          <img src="attack.png" alt="Attack" /><br />
+          Attack
         </button>
-        <button class="action-btn" id="defend-btn" title="Defend (5 Mana)">
-          <img src="defend.png" alt="Defend"/><br />Defend
+        <button class="action-btn" id="defend-btn" title="Defend (Costs 5 Mana)">
+          <img src="defend.png" alt="Defend" /><br />
+          Defend
         </button>
-        <button class="action-btn" id="skill-btn" title="Skill (20 Mana)">
-          <img src="skill.png" alt="Skill"/><br />Skill
+        <button class="action-btn" id="skill-btn" title="Skill (Costs 20 Mana)">
+          <img src="skill.png" alt="Skill" /><br />
+          Skill
         </button>
-        <button class="action-btn" id="hydra-btn" title="HYDRA (25 Mana)">
-          <img src="hydra.png" alt="Hydra"/><br />Hydra
+        <button class="action-btn" id="hydra-btn" title="Hydra (Costs 25 Mana)">
+          <img src="hydra.png" alt="Hydra" /><br />
+          Hydra
         </button>
         <button class="action-btn" id="mana-btn" title="Restore 15 Mana">
-          <img src="mana.png" alt="Mana"/><br />Mana
+          <img src="mana.png" alt="Mana" /><br />
+          Mana
         </button>
       </div>
 
-      <div id="damage-indicator">-20</div>
+      <div id="damage-indicator">-10</div>
       <div id="status"></div>
+
       <div id="victory-message">Victory!</div>
       <button id="back-to-menu-btn">Back To MainMenu</button>
     </div>
+    
+    <!-- CHAT -->
     <div id="chat-container">
       <div id="chat-messages"></div>
       <div id="chat-input-area">
-        <input type="text" id="chat-input" maxlength="20" placeholder="Max 20 characters..."/>
+        <input type="text" id="chat-input" placeholder="Write message..." autocomplete="off" maxlength="20" />
         <button id="chat-send-btn" disabled>Send</button>
       </div>
     </div>
   </div>
+
+<script>
+  // Yeni özellikler: kritik, shake, HYDRA, hasar/büyü gösterimi
+  const damageIndicator = document.getElementById('damage-indicator');
+  const youImg = document.getElementById('you-img');
+  const enemyImg = document.getElementById('enemy-img');
+  const hydraBtn = document.getElementById('hydra-btn');
+
+  let hydraTimers = [0, 0]; // [playerHydra, enemyHydra]
+
+  function shakeProfile(isEnemy) {
+    const el = isEnemy ? enemyImg : youImg;
+    el.classList.add('shake');
+    setTimeout(() => el.classList.remove('shake'), 300);
+  }
+
+  function showDamage(amount, source = '') {
+    damageIndicator.textContent = `${source} -${amount}`;
+    damageIndicator.style.display = 'block';
+    setTimeout(() => {
+      damageIndicator.style.display = 'none';
+    }, 1000);
+  }
+
+  function handleDamageMove(data, isEnemyTurn) {
+    const damage = data.damage || 0;
+    const move = data.move || '';
+    const critical = data.critical || false;
+    const source = move.toUpperCase() + (critical ? ' (CRIT!)' : '');
+    showDamage(damage, source);
+    shakeProfile(isEnemyTurn);
+  }
+
+  hydraBtn.onclick = () => sendMove('hydra');
+</script>
+
 </body>
 </html>
