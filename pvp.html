@@ -48,6 +48,7 @@
     border-radius: 50%;
     background: #666;
     margin-bottom: 10px;
+    object-fit: cover;
   }
   .bar {
     background: #555;
@@ -78,6 +79,7 @@
   #actions {
     display: flex;
     justify-content: center;
+    flex-wrap: wrap;
     gap: 15px;
   }
   button.action-btn {
@@ -188,6 +190,7 @@
   }
   .chat-message {
     margin-bottom: 8px;
+    word-break: break-word;
   }
   .chat-message.you {
     color: #76c7f0;
@@ -256,6 +259,15 @@
   .hydra-active {
     animation: hydraEffect 2s infinite;
   }
+  
+  /* Karakter sayısı göstergesi */
+  #char-count {
+    font-size: 12px;
+    color: #aaa;
+    position: absolute;
+    right: 60px;
+    bottom: 10px;
+  }
 </style>
 </head>
 <body>
@@ -264,27 +276,27 @@
   <div id="game">
     <div class="player-area">
       <div class="player" id="you">
-        <img src="you.jpg" alt="You" class="character" />
+        <img src="you.jpg" alt="You" class="character" id="player-avatar" />
         <div class="bar" title="Health">
           <div class="bar-fill health-fill" id="you-health" style="width: 100%;"></div>
-          <div class="bar-label" id="you-health-label">Health: 100</div>
+          <div class="bar-label" id="you-health-label">Health: 250</div>
         </div>
         <div class="bar" title="Mana">
           <div class="bar-fill mana-fill" id="you-mana" style="width: 100%;"></div>
-          <div class="bar-label" id="you-mana-label">Mana: 50</div>
+          <div class="bar-label" id="you-mana-label">Mana: 100</div>
         </div>
         <div id="player-damage-display" class="damage-display"></div>
       </div>
 
       <div class="player" id="enemy">
-        <img src="enemy.jpg" alt="Enemy" class="character" />
+        <img src="enemy.jpg" alt="Enemy" class="character" id="enemy-avatar" />
         <div class="bar" title="Health">
           <div class="bar-fill health-fill" id="enemy-health" style="width: 100%;"></div>
-          <div class="bar-label" id="enemy-health-label">Health: 100</div>
+          <div class="bar-label" id="enemy-health-label">Health: 250</div>
         </div>
         <div class="bar" title="Mana">
           <div class="bar-fill mana-fill" id="enemy-mana" style="width: 100%;"></div>
-          <div class="bar-label" id="enemy-mana-label">Mana: 50</div>
+          <div class="bar-label" id="enemy-mana-label">Mana: 100</div>
         </div>
         <div id="enemy-damage-display" class="damage-display"></div>
       </div>
@@ -308,7 +320,9 @@
         Mana
       </button>
       <button class="action-btn" id="hydra-btn" title="HYDRA (Costs 30 Mana, Multi-turn damage)">
-        <img src="hydra.png" alt="Hydra" /><br />
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="#4dff4d">
+          <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20M13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" />
+        </svg><br />
         HYDRA
       </button>
     </div>
@@ -325,7 +339,8 @@
   <div id="chat-container">
     <div id="chat-messages"></div>
     <div id="chat-input-area">
-      <input type="text" id="chat-input" placeholder="Write message..." autocomplete="off" />
+      <input type="text" id="chat-input" placeholder="Write message... (max 20 chars)" autocomplete="off" maxlength="20" />
+      <span id="char-count">0/20</span>
       <button id="chat-send-btn" disabled>Send</button>
     </div>
   </div>
@@ -333,6 +348,17 @@
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
 <script>
+  // Değişkenler ve sabitler
+  const MAX_HEALTH = 250; // Daha yüksek can puanı
+  const MAX_MANA = 100;   // Daha yüksek mana puanı
+  const HYDRA_INITIAL_DAMAGE = 10;
+  const HYDRA_TURN_DAMAGE = 8;
+  const HYDRA_TURNS = 4;
+  
+  // Avatar resimleri
+  const playerAvatars = ['you.jpg', 'you2.jpg', 'you3.jpg'];
+  const enemyAvatars = ['enemy.jpg', 'enemy2.jpg', 'enemy3.jpg'];
+  
   // Socket.io bağlantısını kur
   const socket = io("https://pvpbackend.onrender.com");
 
@@ -341,11 +367,13 @@
   const youManaBar = document.getElementById('you-mana');
   const youHealthLabel = document.getElementById('you-health-label');
   const youManaLabel = document.getElementById('you-mana-label');
+  const playerAvatar = document.getElementById('player-avatar');
 
   const enemyHealthBar = document.getElementById('enemy-health');
   const enemyManaBar = document.getElementById('enemy-mana');
   const enemyHealthLabel = document.getElementById('enemy-health-label');
   const enemyManaLabel = document.getElementById('enemy-mana-label');
+  const enemyAvatar = document.getElementById('enemy-avatar');
 
   const statusDiv = document.getElementById('status');
   const victoryMessage = document.getElementById('victory-message');
@@ -364,6 +392,7 @@
   const chatMessages = document.getElementById('chat-messages');
   const chatInput = document.getElementById('chat-input');
   const chatSendBtn = document.getElementById('chat-send-btn');
+  const charCount = document.getElementById('char-count');
 
   let yourIndex = null;
   let yourData = null;
@@ -372,15 +401,41 @@
   let gameActive = false;
   let hydraActive = false;
   let hydraCounter = 0;
+  let initialHealth = 0;
+
+  // Rastgele bir tamsayı üret (min ve max dahil)
+  function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  
+  // Rastgele avatar seç
+  function selectRandomAvatars() {
+    const playerIndex = getRandomInt(0, playerAvatars.length - 1);
+    const enemyIndex = getRandomInt(0, enemyAvatars.length - 1);
+    
+    playerAvatar.src = playerAvatars[playerIndex];
+    enemyAvatar.src = enemyAvatars[enemyIndex];
+  }
+  
+  // Rastgele başlangıç can değeri oluştur
+  function getRandomHealth() {
+    return getRandomInt(200, MAX_HEALTH);
+  }
 
   function updateBars() {
     if(!yourData || !enemyData) return;
+    
+    // Sağlık için (yüzde olarak hesaplanıyor)
+    const yourHealthPercent = (yourData.health / initialHealth) * 100;
+    const enemyHealthPercent = (enemyData.health / initialHealth) * 100;
 
-    youHealthBar.style.width = yourData.health + '%';
-    enemyHealthBar.style.width = enemyData.health + '%';
+    youHealthBar.style.width = yourHealthPercent + '%';
+    enemyHealthBar.style.width = enemyHealthPercent + '%';
 
-    youManaBar.style.width = (yourData.mana / 50 * 100) + '%';
-    enemyManaBar.style.width = (enemyData.mana / 50 * 100) + '%';
+    youManaBar.style.width = (yourData.mana / MAX_MANA * 100) + '%';
+    enemyManaBar.style.width = (enemyData.mana / MAX_MANA * 100) + '%';
 
     youHealthLabel.textContent = `Health: ${yourData.health}`;
     enemyHealthLabel.textContent = `Health: ${enemyData.health}`;
@@ -488,23 +543,23 @@
     if (character) {
       character.classList.add('hydra-active');
       hydraActive = true;
-      hydraCounter = 4; // 4 tur
+      hydraCounter = HYDRA_TURNS;
       
-      addChatMessage(`HYDRA spell activated! Will deal damage for 4 turns.`, 'system');
+      addChatMessage(`HYDRA spell activated! Will deal damage for ${HYDRA_TURNS} turns.`, 'system');
     }
   }
   
   function processHydraEffect() {
     if (hydraActive && hydraCounter > 0) {
       // Düşmana 8 hasar ver (her tur)
-      showDamageEffect('enemy-damage-display', 8);
-      enemyData.health -= 8;
+      showDamageEffect('enemy-damage-display', HYDRA_TURN_DAMAGE);
+      enemyData.health -= HYDRA_TURN_DAMAGE;
       if (enemyData.health < 0) enemyData.health = 0;
       
       updateBars();
       
       hydraCounter--;
-      addChatMessage(`HYDRA deals 8 damage! (${hydraCounter} turns left)`, 'system');
+      addChatMessage(`HYDRA deals ${HYDRA_TURN_DAMAGE} damage! (${hydraCounter} turns left)`, 'system');
       
       if (hydraCounter <= 0) {
         const character = document.querySelector(`#you .character`);
@@ -515,25 +570,61 @@
       }
       
       // Eğer düşman öldüyse
-      if (enemyData.health <= 0) {
-        endGame();
-        
-        setStatus('Victory!');
-        victoryMessage.textContent = 'Victory!';
-        victoryMessage.style.color = '#2ecc71';
-        victoryMessage.style.display = 'block';
-        
-        victorySound.play().catch(e => console.log("Sound error:", e));
-        
-        backToMenuBtn.style.display = 'inline-block';
-        playAgainBtn.style.display = 'inline-block';
-        
-        chatInput.disabled = true;
-        chatSendBtn.disabled = true;
-        
-        addChatMessage(`Game over! Victory!`, 'system');
-      }
+      checkGameOverHydra();
     }
+  }
+  
+  // HYDRA etkisi ile oyun bitimi kontrolü
+  function checkGameOverHydra() {
+    if (enemyData.health <= 0) {
+      enemyData.health = 0;
+      enemyHealthLabel.textContent = `Health: 0`;
+      enemyHealthBar.style.width = '0%';
+      
+      endGame();
+      
+      setStatus('Victory!');
+      victoryMessage.textContent = 'Victory!';
+      victoryMessage.style.color = '#2ecc71';
+      victoryMessage.style.display = 'block';
+      
+      victorySound.play().catch(e => console.log("Sound error:", e));
+      
+      backToMenuBtn.style.display = 'inline-block';
+      playAgainBtn.style.display = 'inline-block';
+      
+      chatInput.disabled = true;
+      chatSendBtn.disabled = true;
+      
+      addChatMessage(`Game over! Victory!`, 'system');
+      
+      return true;
+    }
+    
+    if (yourData.health <= 0) {
+      yourData.health = 0;
+      yourHealthLabel.textContent = `Health: 0`;
+      yourHealthBar.style.width = '0%';
+      
+      endGame();
+      
+      setStatus('Defeat!');
+      victoryMessage.textContent = 'Defeat!';
+      victoryMessage.style.color = '#e74c3c';
+      victoryMessage.style.display = 'block';
+      
+      backToMenuBtn.style.display = 'inline-block';
+      playAgainBtn.style.display = 'inline-block';
+      
+      chatInput.disabled = true;
+      chatSendBtn.disabled = true;
+      
+      addChatMessage(`Game over! Defeat!`, 'system');
+      
+      return true;
+    }
+    
+    return false;
   }
 
   // Socket.io olaylarını dinle  
@@ -550,12 +641,27 @@
 
   socket.on('gameStart', (data) => {
     yourIndex = data.yourIndex;
-    yourData = data.you;
-    enemyData = data.enemy;
+    // Yeni oluşturulmuş rastgele sağlık değeri
+    initialHealth = getRandomHealth();
+    
+    // Backend'den gelen değerleri uyarla (100 üzerinden gelecek, ama biz 200-250 arası kullanacağız)
+    yourData = {
+      health: initialHealth,
+      mana: MAX_MANA
+    };
+    
+    enemyData = {
+      health: initialHealth,
+      mana: MAX_MANA
+    };
+    
     yourTurn = yourIndex === 0;
     gameActive = true;
     hydraActive = false;
     hydraCounter = 0;
+    
+    // Rastgele avatarlar seç
+    selectRandomAvatars();
     
     updateBars();
     updateButtonStatus();
@@ -574,12 +680,36 @@
     document.querySelector('#you .character').classList.remove('hydra-active');
     document.querySelector('#enemy .character').classList.remove('hydra-active');
     
-    addChatMessage("Game started! " + (yourTurn ? "It's your turn." : "Waiting for opponent's move."), 'system');
+    addChatMessage(`Game started with ${initialHealth} HP! ` + (yourTurn ? "It's your turn." : "Waiting for opponent's move."), 'system');
   });
 
   socket.on('moveConfirmed', (data) => {
-    yourData = data.you;
-    enemyData = data.enemy;
+    // Backend'in değerlerini kendi değerlerimizle senkronize et
+    const healthDelta = data.you.health - 100; // 100'den ne kadar farklı?
+    const manaDelta = data.you.mana - 50;     // 50'den ne kadar farklı?
+    
+    yourData.health = initialHealth + healthDelta;
+    yourData.mana = MAX_MANA + manaDelta;
+    
+    // Sınırları kontrol et
+    if (yourData.health > initialHealth) yourData.health = initialHealth;
+    if (yourData.health < 0) yourData.health = 0;
+    if (yourData.mana > MAX_MANA) yourData.mana = MAX_MANA;
+    if (yourData.mana < 0) yourData.mana = 0;
+    
+    // Aynı şekilde düşman için
+    const enemyHealthDelta = data.enemy.health - 100;
+    const enemyManaDelta = data.enemy.mana - 50;
+    
+    enemyData.health = initialHealth + enemyHealthDelta;
+    enemyData.mana = MAX_MANA + enemyManaDelta;
+    
+    // Sınırları kontrol et
+    if (enemyData.health > initialHealth) enemyData.health = initialHealth;
+    if (enemyData.health < 0) enemyData.health = 0;
+    if (enemyData.mana > MAX_MANA) enemyData.mana = MAX_MANA;
+    if (enemyData.mana < 0) enemyData.mana = 0;
+    
     yourTurn = false;
     
     updateBars();
@@ -592,13 +722,16 @@
     } else if (data.move === 'defend') {
       showHealEffect('player-damage-display', 10);
     } else if (data.move === 'skill') {
-      showDamageEffect('enemy-damage-display', 30);
+      // Eğer HYDRA kullandıysak
+      if (hydraActive) {
+        // Sadece animasyon göster, değerler zaten bizim tarafımızdan ayarlandı
+        showDamageEffect('enemy-damage-display', HYDRA_INITIAL_DAMAGE);
+      } else {
+        // Normal 'skill' kullandıysak
+        showDamageEffect('enemy-damage-display', 30);
+      }
     } else if (data.move === 'mana') {
       showManaEffect('player-damage-display', 15);
-    } else if (data.move === 'hydra') { 
-      // Not: Backend 'hydra' komutunu desteklemiyor, bu yüzden bu hiç çalışmayacak
-      showDamageEffect('enemy-damage-display', 10);
-      startHydraEffect('you');
     }
     
     // HYDRA spell efektini işle (eğer aktifse)
@@ -607,12 +740,39 @@
     }
     
     // Log mesajı
-    addChatMessage(`You used ${data.move}.`, 'system');
+    addChatMessage(`You used ${hydraActive ? 'HYDRA' : data.move}.`, 'system');
+    
+    // Oyun sonu kontrolü
+    checkGameOverHydra();
   });
 
   socket.on('enemyMove', (data) => {
-    yourData = data.you;
-    enemyData = data.enemy;
+    // Backend'in değerlerini kendi değerlerimizle senkronize et
+    const healthDelta = data.you.health - 100; // 100'den ne kadar farklı?
+    const manaDelta = data.you.mana - 50;     // 50'den ne kadar farklı?
+    
+    yourData.health = initialHealth + healthDelta;
+    yourData.mana = MAX_MANA + manaDelta;
+    
+    // Sınırları kontrol et
+    if (yourData.health > initialHealth) yourData.health = initialHealth;
+    if (yourData.health < 0) yourData.health = 0;
+    if (yourData.mana > MAX_MANA) yourData.mana = MAX_MANA;
+    if (yourData.mana < 0) yourData.mana = 0;
+    
+    // Aynı şekilde düşman için
+    const enemyHealthDelta = data.enemy.health - 100;
+    const enemyManaDelta = data.enemy.mana - 50;
+    
+    enemyData.health = initialHealth + enemyHealthDelta;
+    enemyData.mana = MAX_MANA + enemyManaDelta;
+    
+    // Sınırları kontrol et
+    if (enemyData.health > initialHealth) enemyData.health = initialHealth;
+    if (enemyData.health < 0) enemyData.health = 0;
+    if (enemyData.mana > MAX_MANA) enemyData.mana = MAX_MANA;
+    if (enemyData.mana < 0) enemyData.mana = 0;
+    
     yourTurn = true;
     
     updateBars();
@@ -628,13 +788,13 @@
       showDamageEffect('player-damage-display', 30);
     } else if (data.move === 'mana') {
       showManaEffect('enemy-damage-display', 15);
-    } else if (data.move === 'hydra') {
-      showDamageEffect('player-damage-display', 10);
-      startHydraEffect('enemy');
     }
     
     // Log mesajı
     addChatMessage(`Enemy used ${data.move}.`, 'system');
+    
+    // Oyun sonu kontrolü
+    checkGameOverHydra();
   });
 
   socket.on('errorMessage', (msg) => {
@@ -651,9 +811,19 @@
     if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
       message = 'Victory!';
       color = '#2ecc71';
+      
+      // Düşmanı öldür
+      enemyData.health = 0;
+      enemyHealthBar.style.width = '0%';
+      enemyHealthLabel.textContent = 'Health: 0';
     } else {
       message = 'Defeat!';
       color = '#e74c3c';
+      
+      // Kendinizi öldürün
+      yourData.health = 0;
+      youHealthBar.style.width = '0%';
+      youHealthLabel.textContent = 'Health: 0';
     }
 
     setStatus(message);
@@ -710,7 +880,7 @@
       
       // İstemci tarafında HYDRA gibi davran
       yourData.mana -= 30; // HYDRA maliyeti
-      enemyData.health -= 10; // İlk hasarı
+      enemyData.health -= HYDRA_INITIAL_DAMAGE; // İlk hasarı
       
       updateBars();
       updateButtonStatus();
@@ -755,6 +925,7 @@
     socket.emit('chatMessage', { message: msg });
     addChatMessage(`You: ${msg}`, 'you');
     chatInput.value = '';
+    charCount.textContent = '0/20';
     chatInput.focus();
   }
 
@@ -763,8 +934,10 @@
     if(e.key === 'Enter') sendChatMessage();
   });
 
-  // Chat input etkinleştirme
+  // Karakter sayısı göstergesi
   chatInput.addEventListener('input', function() {
+    const length = chatInput.value.length;
+    charCount.textContent = `${length}/20`;
     chatSendBtn.disabled = chatInput.value.trim() === '';
   });
 </script>
