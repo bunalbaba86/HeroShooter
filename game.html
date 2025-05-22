@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>1v1 PvP Turn-Based Game + Chat</title>
+<link rel="stylesheet" href="styles.css">
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -269,6 +270,22 @@
     right: 60px;
     bottom: 10px;
   }
+  
+  /* Player username display */
+  .player-username {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 16px;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+  
+  .your-username {
+    color: #3498db;
+  }
+  
+  .enemy-username {
+    color: #e74c3c;
+  }
 </style>
 </head>
 <body>
@@ -277,6 +294,7 @@
   <div id="game">
     <div class="player-area">
       <div class="player" id="you">
+        <div class="player-username your-username" id="your-username">You</div>
         <img src="you.jpg" alt="You" class="character" id="player-avatar" />
         <div class="bar" title="Health">
           <div class="bar-fill health-fill" id="you-health" style="width: 100%;"></div>
@@ -290,6 +308,7 @@
       </div>
 
       <div class="player" id="enemy">
+        <div class="player-username enemy-username" id="enemy-username">Enemy</div>
         <img src="enemy.jpg" alt="Enemy" class="character" id="enemy-avatar" />
         <div class="bar" title="Health">
           <div class="bar-fill health-fill" id="enemy-health" style="width: 100%;"></div>
@@ -331,7 +350,6 @@
     <div id="victory-message">Victory!</div>
     <button id="back-to-menu-btn">Back To Menu</button>
     <button id="play-again-btn">Play Again</button>
-    <audio id="victory-sound" src="victory.mp3" preload="auto"></audio>
   </div>
 
   <!-- CHAT -->
@@ -346,7 +364,25 @@
 </div>
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
+<script src="auth_client.js"></script>
 <script>
+  // Check if user is logged in
+  document.addEventListener('DOMContentLoaded', function() {
+    const loginData = localStorage.getItem('user');
+    
+    if (!loginData) {
+      // Redirect to login if not logged in
+      window.location.href = 'login.html';
+      return;
+    }
+    
+    const userData = JSON.parse(loginData);
+    const username = userData.username || 'Player';
+    
+    // Set player username
+    document.getElementById('your-username').textContent = username;
+  });
+
   // Socket.io bağlantısını kur
   const socket = io("https://pvpbackend.onrender.com");
 
@@ -356,16 +392,17 @@
   const youHealthLabel = document.getElementById('you-health-label');
   const youManaLabel = document.getElementById('you-mana-label');
   const playerAvatar = document.getElementById('player-avatar');
+  const yourUsername = document.getElementById('your-username');
 
   const enemyHealthBar = document.getElementById('enemy-health');
   const enemyManaBar = document.getElementById('enemy-mana');
   const enemyHealthLabel = document.getElementById('enemy-health-label');
   const enemyManaLabel = document.getElementById('enemy-mana-label');
   const enemyAvatar = document.getElementById('enemy-avatar');
+  const enemyUsername = document.getElementById('enemy-username');
 
   const statusDiv = document.getElementById('status');
   const victoryMessage = document.getElementById('victory-message');
-  const victorySound = document.getElementById('victory-sound');
 
   const backToMenuBtn = document.getElementById('back-to-menu-btn');
   const playAgainBtn = document.getElementById('play-again-btn');
@@ -388,6 +425,7 @@
   let yourTurn = false;
   let gameActive = false;
   let initialHealth = 200;
+  let enemyName = "Enemy";
 
   function updateBars() {
     if(!yourData || !enemyData) return;
@@ -444,313 +482,282 @@
   function endGame() {
     gameActive = false;
     setButtonsDisabled(true);
-    yourTurn = false;
   }
 
-  function addChatMessage(text, sender) {
-    const div = document.createElement('div');
-    div.classList.add('chat-message');
-    if(sender === 'you') div.classList.add('you');
-    else if(sender === 'enemy') div.classList.add('enemy');
-    else if(sender === 'system') div.classList.add('system');
+  function showDamageNumber(target, amount, type = 'damage') {
+    const element = document.createElement('div');
+    let className, prefix = '';
     
-    div.textContent = text;
-    chatMessages.appendChild(div);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-  
-  // Hasar animasyonunu göster
-  function showDamageEffect(elementId, amount) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    
-    const damageEl = document.createElement('div');
-    damageEl.className = 'damage-number';
-    damageEl.textContent = `-${amount}`;
-    damageEl.style.left = `${Math.random() * 30 + 35}%`;
-    damageEl.style.top = `${Math.random() * 30 + 35}%`;
-    
-    element.appendChild(damageEl);
-    
-    // Kart sallanma efekti
-    const card = element.closest('.player');
-    if (card) {
-      card.classList.add('shake-animation');
-      setTimeout(() => card.classList.remove('shake-animation'), 500);
+    if (type === 'damage') {
+      className = 'damage-number';
+      prefix = '-';
+    } else if (type === 'heal') {
+      className = 'heal-number';
+      prefix = '+';
+    } else if (type === 'mana') {
+      className = 'mana-number';
+      prefix = '+';
     }
     
-    // Belirli bir süre sonra hasar efektini kaldır
-    setTimeout(() => damageEl.remove(), 800);
-  }
-  
-  // İyileştirme animasyonunu göster
-  function showHealEffect(elementId, amount) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+    element.className = className;
+    element.textContent = prefix + amount;
     
-    const healEl = document.createElement('div');
-    healEl.className = 'heal-number';
-    healEl.textContent = `+${amount}`;
-    healEl.style.left = `${Math.random() * 30 + 35}%`;
-    healEl.style.top = `${Math.random() * 30 + 35}%`;
+    // Position randomly near the character
+    const targetRect = target.getBoundingClientRect();
+    const randomX = Math.random() * 60 - 30;
+    const randomY = Math.random() * 20 - 30;
     
-    element.appendChild(healEl);
+    element.style.left = (targetRect.width / 2 + randomX) + 'px';
+    element.style.top = (targetRect.height / 2 + randomY) + 'px';
     
-    setTimeout(() => healEl.remove(), 800);
-  }
-  
-  // Mana animasyonunu göster
-  function showManaEffect(elementId, amount) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
+    target.appendChild(element);
     
-    const manaEl = document.createElement('div');
-    manaEl.className = 'mana-number';
-    manaEl.textContent = `+${amount}`;
-    manaEl.style.left = `${Math.random() * 30 + 35}%`;
-    manaEl.style.top = `${Math.random() * 30 + 35}%`;
+    // Add shake animation to the character if it's damage
+    if (type === 'damage') {
+      target.querySelector('.character').classList.add('shake-animation');
+      setTimeout(() => {
+        target.querySelector('.character').classList.remove('shake-animation');
+      }, 500);
+    }
     
-    element.appendChild(manaEl);
-    
-    setTimeout(() => manaEl.remove(), 800);
+    // Remove the element after animation completes
+    setTimeout(() => {
+      if (element.parentNode === target) {
+        target.removeChild(element);
+      }
+    }, 800);
   }
 
-  // Socket.io olaylarını dinle  
+  function addChatMessage(message, sender) {
+    const messageElement = document.createElement('div');
+    
+    if (sender === 'system') {
+      messageElement.className = 'chat-message system';
+      messageElement.textContent = message;
+    } else if (sender === 'you') {
+      messageElement.className = 'chat-message you';
+      const username = yourUsername.textContent;
+      messageElement.textContent = `${username}: ${message}`;
+    } else if (sender === 'enemy') {
+      messageElement.className = 'chat-message enemy';
+      messageElement.textContent = `${enemyName}: ${message}`;
+    }
+    
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  // Join game with player name
   socket.on('connect', () => {
-    setStatus("Connected. Waiting for opponent...");
-    setButtonsDisabled(true);
-    socket.emit('playerMove', { move: 'join' });
+    console.log('Connected to server');
+    
+    // Kullanıcı bilgilerini al
+    const loginData = localStorage.getItem('user');
+    let username = 'Player';
+    
+    if (loginData) {
+      const userData = JSON.parse(loginData);
+      username = userData.username || 'Player';
+    }
+    
+    // Join game queue with username
+    socket.emit('playerMove', { 
+      move: 'join',
+      username: username
+    });
   });
 
+  // Waiting for opponent
   socket.on('waitingForOpponent', () => {
-    setStatus("Waiting for opponent...");
-    setButtonsDisabled(true);
+    setStatus('Waiting for an opponent...');
+    addChatMessage('Waiting for an opponent to join...', 'system');
   });
 
+  // Game start
   socket.on('gameStart', (data) => {
     yourIndex = data.yourIndex;
     yourData = data.you;
     enemyData = data.enemy;
-    initialHealth = data.initialHealth || 200;
-    yourTurn = yourIndex === 0;
-    gameActive = true;
+    initialHealth = data.initialHealth;
+    enemyName = data.enemyUsername || "Enemy";
     
-    // Avatar resimleri ayarla
-    playerAvatar.src = data.playerAvatar || 'you.jpg';
-    enemyAvatar.src = data.enemyAvatar || 'enemy.jpg';
+    // Update UI with opponent name
+    enemyUsername.textContent = enemyName;
+    
+    // Set avatars
+    if (data.playerAvatar) {
+      playerAvatar.src = data.playerAvatar;
+    }
+    if (data.enemyAvatar) {
+      enemyAvatar.src = data.enemyAvatar;
+    }
+    
+    yourTurn = yourIndex === 0; // First player starts
+    gameActive = true;
     
     updateBars();
     updateButtonStatus();
     
-    setStatus(yourTurn ? "Your turn" : "Opponent's turn");
+    if (yourTurn) {
+      setStatus('Your turn');
+    } else {
+      setStatus('Enemy turn');
+    }
     
-    victoryMessage.style.display = 'none';
-    backToMenuBtn.style.display = 'none';
-    playAgainBtn.style.display = 'none';
-
-    chatMessages.innerHTML = '';
-    chatInput.disabled = false;
-    chatSendBtn.disabled = false;
+    // System messages
+    addChatMessage('Game started!', 'system');
+    addChatMessage(`You are playing against ${enemyName}`, 'system');
     
-    // Karakterlerde animasyon varsa temizle
-    document.querySelector('#you .character').classList.remove('hydra-active');
-    document.querySelector('#enemy .character').classList.remove('hydra-active');
-    
-    addChatMessage(`Game started with ${initialHealth} HP! ` + (yourTurn ? "It's your turn." : "Waiting for opponent's move."), 'system');
+    if (yourTurn) {
+      addChatMessage('Your turn first', 'system');
+    } else {
+      addChatMessage('Enemy goes first', 'system');
+    }
   });
 
+  // Move confirmed
   socket.on('moveConfirmed', (data) => {
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = false;
     
+    // Show animations based on move type
+    if (data.move === 'attack' || data.move === 'skill' || data.move === 'hydra') {
+      let damage = 0;
+      if (data.move === 'attack') damage = 15;
+      else if (data.move === 'skill') damage = 30;
+      else if (data.move === 'hydra') damage = 10;
+      
+      showDamageNumber(document.getElementById('enemy'), damage, 'damage');
+    } else if (data.move === 'defend') {
+      showDamageNumber(document.getElementById('you'), 10, 'heal');
+    } else if (data.move === 'mana') {
+      showDamageNumber(document.getElementById('you'), 15, 'mana');
+    }
+    
     updateBars();
     updateButtonStatus();
-    setStatus("Opponent's turn");
+    setStatus('Enemy turn');
     
-    // Hamle animasyonları
-    if (data.move === 'attack') {
-      showDamageEffect('enemy-damage-display', 15);
-    } else if (data.move === 'defend') {
-      showHealEffect('player-damage-display', 10);
-    } else if (data.move === 'skill') {
-      showDamageEffect('enemy-damage-display', 30);
-    } else if (data.move === 'mana') {
-      showManaEffect('player-damage-display', 15);
-    } else if (data.move === 'hydra') {
-      showDamageEffect('enemy-damage-display', 10);
-      
-      // HYDRA animasyonu
-      document.querySelector('#you .character').classList.add('hydra-active');
-      
-      addChatMessage(`HYDRA spell activated! Will deal damage for 3 more turns.`, 'system');
-    }
-    
-    // HYDRA aktifse, ilave hasar göster
-    if (yourData.hydraActive > 0) {
-      showDamageEffect('enemy-damage-display', 8);
-    }
-    
-    // Log mesajı
-    addChatMessage(`You used ${data.move}.`, 'system');
+    // Add chat message
+    addChatMessage(`You used ${data.move}`, 'system');
   });
 
+  // Enemy move
   socket.on('enemyMove', (data) => {
     yourData = data.you;
     enemyData = data.enemy;
     yourTurn = true;
     
+    // Show animations based on enemy move
+    if (data.move === 'attack' || data.move === 'skill' || data.move === 'hydra') {
+      let damage = 0;
+      if (data.move === 'attack') damage = 15;
+      else if (data.move === 'skill') damage = 30;
+      else if (data.move === 'hydra') damage = 10;
+      
+      showDamageNumber(document.getElementById('you'), damage, 'damage');
+    } else if (data.move === 'defend') {
+      showDamageNumber(document.getElementById('enemy'), 10, 'heal');
+    } else if (data.move === 'mana') {
+      showDamageNumber(document.getElementById('enemy'), 15, 'mana');
+    }
+    
     updateBars();
     updateButtonStatus();
-    setStatus("Your turn");
+    setStatus('Your turn');
     
-    // Düşman hamle animasyonları
-    if (data.move === 'attack') {
-      showDamageEffect('player-damage-display', 15);
-    } else if (data.move === 'defend') {
-      showHealEffect('enemy-damage-display', 10);
-    } else if (data.move === 'skill') {
-      showDamageEffect('player-damage-display', 30);
-    } else if (data.move === 'mana') {
-      showManaEffect('enemy-damage-display', 15);
-    } else if (data.move === 'hydra') {
-      showDamageEffect('player-damage-display', 10);
-      
-      // HYDRA animasyonu
-      document.querySelector('#enemy .character').classList.add('hydra-active');
-      
-      addChatMessage(`Enemy used HYDRA spell! Will deal damage for 3 more turns.`, 'system');
-    }
-    
-    // HYDRA aktifse, ilave hasar göster
-    if (enemyData.hydraActive > 0) {
-      showDamageEffect('player-damage-display', 8);
-    }
-    
-    // Log mesajı
-    addChatMessage(`Enemy used ${data.move}.`, 'system');
+    // Add chat message
+    addChatMessage(`Enemy used ${data.move}`, 'system');
   });
 
-  socket.on('errorMessage', (msg) => {
-    setStatus(msg);
-    addChatMessage(`Error: ${msg}`, 'system');
-  });
-
-  socket.on('gameOver', ({ winner }) => {
+  // Game over
+  socket.on('gameOver', (data) => {
     endGame();
-
-    let message = '';
-    let color = '';
-
-    if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
-      message = 'Victory!';
-      color = '#2ecc71';
-      
-      // Düşmanı öldür
-      enemyData.health = 0;
-      enemyHealthBar.style.width = '0%';
-      enemyHealthLabel.textContent = 'Health: 0';
+    
+    if (data.winner === 'player') {
+      victoryMessage.textContent = 'Victory!';
+      victoryMessage.style.color = '#2ecc71';
+      addChatMessage('You won!', 'system');
     } else {
-      message = 'Defeat!';
-      color = '#e74c3c';
-      
-      // Kendinizi öldürün
-      yourData.health = 0;
-      youHealthBar.style.width = '0%';
-      youHealthLabel.textContent = 'Health: 0';
+      victoryMessage.textContent = 'Defeat!';
+      victoryMessage.style.color = '#e74c3c';
+      addChatMessage('You lost!', 'system');
     }
-
-    setStatus(message);
-    victoryMessage.textContent = message;
-    victoryMessage.style.color = color;
+    
     victoryMessage.style.display = 'block';
-    
-    if (message === 'Victory!') {
-      victorySound.play().catch(e => console.log("Sound error:", e));
-    }
-
-    backToMenuBtn.style.display = 'inline-block';
-    playAgainBtn.style.display = 'inline-block';
-
-    chatInput.disabled = true;
-    chatSendBtn.disabled = true;
-    
-    addChatMessage(`Game over! ${message}`, 'system');
+    backToMenuBtn.style.display = 'block';
+    playAgainBtn.style.display = 'block';
   });
 
-  socket.on('chatMessage', ({ message, fromIndex }) => {
-    if(fromIndex !== yourIndex) {
-      addChatMessage(`Enemy: ${message}`, 'enemy');
+  // Error message
+  socket.on('errorMessage', (data) => {
+    console.error('Server error:', data);
+    addChatMessage(`Error: ${data}`, 'system');
+  });
+
+  // Chat message received
+  socket.on('chatMessage', (data) => {
+    addChatMessage(data.message, 'enemy');
+  });
+
+  // Set up game controls
+  attackBtn.addEventListener('click', () => {
+    socket.emit('playerMove', { move: 'attack' });
+  });
+
+  defendBtn.addEventListener('click', () => {
+    socket.emit('playerMove', { move: 'defend' });
+  });
+
+  skillBtn.addEventListener('click', () => {
+    socket.emit('playerMove', { move: 'skill' });
+  });
+
+  manaBtn.addEventListener('click', () => {
+    socket.emit('playerMove', { move: 'mana' });
+  });
+
+  hydraBtn.addEventListener('click', () => {
+    socket.emit('playerMove', { move: 'hydra' });
+  });
+
+  // Handle chat input
+  chatInput.addEventListener('input', () => {
+    const currentLength = chatInput.value.length;
+    charCount.textContent = `${currentLength}/20`;
+    
+    // Enable/disable send button
+    chatSendBtn.disabled = currentLength === 0;
+  });
+
+  chatSendBtn.addEventListener('click', sendChatMessage);
+
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      sendChatMessage();
     }
   });
 
-  socket.on('disconnect', () => {
-    setStatus("Connection lost. Trying to reconnect...");
-    gameActive = false;
-    updateButtonStatus();
-    
-    backToMenuBtn.style.display = 'inline-block';
-    playAgainBtn.style.display = 'inline-block';
-    
-    addChatMessage("Connection to the server lost. You can try to play again.", 'system');
-  });
-
-  function sendMove(move) {
-    if(!yourTurn || !gameActive) {
-      setStatus("Wait for your turn!");
-      return;
-    }
-    
-    socket.emit('playerMove', { move });
-  }
-
-  attackBtn.onclick = () => sendMove('attack');
-  defendBtn.onclick = () => sendMove('defend');
-  skillBtn.onclick = () => sendMove('skill');
-  manaBtn.onclick = () => sendMove('mana');
-  hydraBtn.onclick = () => sendMove('hydra');
-
-  backToMenuBtn.onclick = () => {
-    window.location.reload();
-  };
-  
-  playAgainBtn.onclick = () => {
-    socket.emit('playerMove', { move: 'join' });
-    
-    victoryMessage.style.display = 'none';
-    backToMenuBtn.style.display = 'none';
-    playAgainBtn.style.display = 'none';
-    
-    setStatus("Waiting for a new game...");
-    
-    chatMessages.innerHTML = '';
-    addChatMessage("Looking for a new opponent...", 'system');
-  };
-
-  // Chat gönderme
   function sendChatMessage() {
-    const msg = chatInput.value.trim();
-    if(msg === '') return;
-    
-    socket.emit('chatMessage', { message: msg });
-    addChatMessage(`You: ${msg}`, 'you');
-    chatInput.value = '';
-    charCount.textContent = '0/20';
-    chatInput.focus();
+    const message = chatInput.value.trim();
+    if (message) {
+      socket.emit('chatMessage', { message });
+      addChatMessage(message, 'you');
+      chatInput.value = '';
+      charCount.textContent = '0/20';
+      chatSendBtn.disabled = true;
+    }
   }
 
-  chatSendBtn.onclick = sendChatMessage;
-  chatInput.addEventListener('keypress', e => {
-    if(e.key === 'Enter') sendChatMessage();
+  // Game end buttons
+  backToMenuBtn.addEventListener('click', () => {
+    window.location.href = 'pve.html'; // Redirect to pve.html as requested
   });
 
-  // Karakter sayısı göstergesi
-  chatInput.addEventListener('input', function() {
-    const length = chatInput.value.length;
-    charCount.textContent = `${length}/20`;
-    chatSendBtn.disabled = chatInput.value.trim() === '';
+  playAgainBtn.addEventListener('click', () => {
+    window.location.reload(); // Reload the page to start a new game
   });
 </script>
-
 </body>
 </html>
