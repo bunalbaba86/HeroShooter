@@ -574,35 +574,51 @@
   });
 
   // Game start
-  socket.on('gameStart', (data) => {
-    yourIndex = data.yourIndex;
-    yourData = data.you;
-    enemyData = data.enemy;
-    initialHealth = data.initialHealth;
-    enemyName = data.enemyUsername || "Enemy";
-    
-    // Update UI with opponent name
-    enemyUsername.textContent = enemyName;
-    
-    // Set avatars
-    if (data.playerAvatar) {
-      playerAvatar.src = data.playerAvatar;
-    }
-    if (data.enemyAvatar) {
-      enemyAvatar.src = data.enemyAvatar;
-    }
-    
-    yourTurn = yourIndex === 0; // First player starts
-    gameActive = true;
-    
-    updateBars();
-    updateButtonStatus();
-    
-    if (yourTurn) {
-      setStatus('Your turn');
-    } else {
-      setStatus('Enemy turn');
-    }
+socket.on('gameStart', (data) => {
+  yourIndex = data.yourIndex;
+  yourData = data.you;
+  enemyData = data.enemy;
+  initialHealth = data.initialHealth;
+  enemyName = data.enemyUsername || "Enemy";
+  
+  // Update UI with opponent name
+  enemyUsername.textContent = enemyName;
+  
+  // Senin profil fotoğrafların
+  const playerImages = ['you.png', 'you1.png', 'you2.png'];
+  // Rakip profil fotoğrafları
+  const enemyImages = ['enemy.png', 'enemy1.png', 'enemy2.png'];
+  
+  // Rastgele profil fotoğrafı seç
+  const playerIndex = Math.floor(Math.random() * playerImages.length);
+  const enemyIndex = Math.floor(Math.random() * enemyImages.length);
+  
+  // Fotoğrafları ayarla
+  playerAvatar.src = playerImages[playerIndex];
+  enemyAvatar.src = enemyImages[enemyIndex];
+  
+  yourTurn = yourIndex === 0; // First player starts
+  gameActive = true;
+  
+  updateBars();
+  updateButtonStatus();
+  
+  if (yourTurn) {
+    setStatus('Your turn');
+  } else {
+    setStatus('Enemy turn');
+  }
+  
+  // System messages
+  addChatMessage('Game started!', 'system');
+  addChatMessage(`You are playing against ${enemyName}`, 'system');
+  
+  if (yourTurn) {
+    addChatMessage('Your turn first', 'system');
+  } else {
+    addChatMessage('Enemy goes first', 'system');
+  }
+});
     
     // System messages
     addChatMessage('Game started!', 'system');
