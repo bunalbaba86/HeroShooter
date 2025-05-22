@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - 1v1 PvP Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>Register</h1>
+        </div>
+        
+        <div class="form-container">
+            <form id="register-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" name="confirm-password" required>
+                </div>
+                
+                <div id="error-message" class="error-message"></div>
+                
+                <button type="submit" class="form-button">Register</button>
+            </form>
+            
+            <div class="form-footer">
+                <p>Already have an account? <a href="login.html">Login</a></p>
+                <p><a href="index.html">Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="auth_client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const registerForm = document.getElementById('register-form');
+            const errorMessage = document.getElementById('error-message');
+            
+            // Check if user is already logged in
+            if (isLoggedIn()) {
+                window.location.href = 'pve.html';
+                return;
+            }
+            
+            registerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                
+                // Basit doğrulama
+                if (!username || !password) {
+                    errorMessage.textContent = 'Please enter all required fields';
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    errorMessage.textContent = 'Passwords do not match';
+                    return;
+                }
+                
+                // Basit kayıt işlemi (gerçek uygulamada server'a gönderilir)
+                if (registerUser(username, password)) {
+                    alert('Registration successful! You can now log in.');
+                    window.location.href = 'login.html';
+                } else {
+                    errorMessage.textContent = 'Registration failed. Please try again.';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
