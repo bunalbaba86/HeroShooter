@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - 1v1 PvP Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="game-header">
+            <h1>Login</h1>
+        </div>
+        
+        <div class="form-container">
+            <form id="login-form">
+                <div class="input-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <div id="error-message" class="error-message"></div>
+                
+                <button type="submit" class="form-button">Login</button>
+            </form>
+            
+            <div class="form-footer">
+                <p>Don't have an account? <a href="register.html">Register</a></p>
+                <p><a href="index.html">Back to Home</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="auth_client.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('login-form');
+            const errorMessage = document.getElementById('error-message');
+            
+            // Check if user is already logged in
+            if (isLoggedIn()) {
+                window.location.href = 'pve.html';
+                return;
+            }
+            
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                // Basit doğrulama
+                if (!username || !password) {
+                    errorMessage.textContent = 'Please enter both username and password';
+                    return;
+                }
+                
+                // Basit giriş işlemi (gerçek uygulamada server'a gönderilir)
+                if (loginUser(username, password)) {
+                    window.location.href = 'pve.html';
+                } else {
+                    errorMessage.textContent = 'Login failed. Please try again.';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
