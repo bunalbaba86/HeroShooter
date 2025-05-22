@@ -383,13 +383,12 @@
     document.getElementById('your-username').textContent = username;
   });
 
-  // Socket.io bağlantısını kur
-    const socket = io("https://pvpbackend.onrender.com", {
-    withCredentials: true,
-    extraHeaders: {
-      "Access-Control-Allow-Origin": "*"
-    }
-  });
+  // Socket bağlantısını kur veya local sim kullan
+  let socket;
+  let useLocalMode = false;
+  let localGameInstance = null;
+  
+  // Önce backend sunucusuna bağlanmayı dene
   // Oyuncu ve düşman barları
   const youHealthBar = document.getElementById('you-health');
   const youManaBar = document.getElementById('you-mana');
