@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>1v1 PvP Turn-Based Game + Chat</title>
-<link rel="stylesheet" href="styles.css">
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -270,22 +269,6 @@
     right: 60px;
     bottom: 10px;
   }
-  
-  /* Player username display */
-  .player-username {
-    font-weight: bold;
-    margin-bottom: 5px;
-    font-size: 16px;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-  }
-  
-  .your-username {
-    color: #3498db;
-  }
-  
-  .enemy-username {
-    color: #e74c3c;
-  }
 </style>
 </head>
 <body>
@@ -294,7 +277,6 @@
   <div id="game">
     <div class="player-area">
       <div class="player" id="you">
-        <div class="player-username your-username" id="your-username">You</div>
         <img src="you.jpg" alt="You" class="character" id="player-avatar" />
         <div class="bar" title="Health">
           <div class="bar-fill health-fill" id="you-health" style="width: 100%;"></div>
@@ -308,7 +290,6 @@
       </div>
 
       <div class="player" id="enemy">
-        <div class="player-username enemy-username" id="enemy-username">Enemy</div>
         <img src="enemy.jpg" alt="Enemy" class="character" id="enemy-avatar" />
         <div class="bar" title="Health">
           <div class="bar-fill health-fill" id="enemy-health" style="width: 100%;"></div>
@@ -340,7 +321,9 @@
         Mana
       </button>
       <button class="action-btn" id="hydra-btn" title="HYDRA (Costs 30 Mana, Multi-turn damage)">
-        <img src="hydra.png" alt="Hydra" /><br />
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="#4dff4d">
+          <path d="M12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2M12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20M13 7H11V11H7V13H11V17H13V13H17V11H13V7Z" />
+        </svg><br />
         HYDRA
       </button>
     </div>
@@ -350,6 +333,7 @@
     <div id="victory-message">Victory!</div>
     <button id="back-to-menu-btn">Back To Menu</button>
     <button id="play-again-btn">Play Again</button>
+    <audio id="victory-sound" src="victory.mp3" preload="auto"></audio>
   </div>
 
   <!-- CHAT -->
@@ -364,7 +348,411 @@
 </div>
 
 <script src="https://cdn.socket.io/4.5.4/socket.io.min.js" integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI" crossorigin="anonymous"></script>
-<script src="auth_client.js"></script>
-<script src="game.js"></script>
+<script>
+  // Socket.io bağlantısını kur
+  const socket = io("https://pvpbackend.onrender.com");
+
+  // Oyuncu ve düşman barları
+  const youHealthBar = document.getElementById('you-health');
+  const youManaBar = document.getElementById('you-mana');
+  const youHealthLabel = document.getElementById('you-health-label');
+  const youManaLabel = document.getElementById('you-mana-label');
+  const playerAvatar = document.getElementById('player-avatar');
+
+  const enemyHealthBar = document.getElementById('enemy-health');
+  const enemyManaBar = document.getElementById('enemy-mana');
+  const enemyHealthLabel = document.getElementById('enemy-health-label');
+  const enemyManaLabel = document.getElementById('enemy-mana-label');
+  const enemyAvatar = document.getElementById('enemy-avatar');
+
+  const statusDiv = document.getElementById('status');
+  const victoryMessage = document.getElementById('victory-message');
+  const victorySound = document.getElementById('victory-sound');
+
+  const backToMenuBtn = document.getElementById('back-to-menu-btn');
+  const playAgainBtn = document.getElementById('play-again-btn');
+
+  const attackBtn = document.getElementById('attack-btn');
+  const defendBtn = document.getElementById('defend-btn');
+  const skillBtn = document.getElementById('skill-btn');
+  const manaBtn = document.getElementById('mana-btn');
+  const hydraBtn = document.getElementById('hydra-btn');
+
+  // Chat elemanları
+  const chatMessages = document.getElementById('chat-messages');
+  const chatInput = document.getElementById('chat-input');
+  const chatSendBtn = document.getElementById('chat-send-btn');
+  const charCount = document.getElementById('char-count');
+
+  let yourIndex = null;
+  let yourData = null;
+  let enemyData = null;
+  let yourTurn = false;
+  let gameActive = false;
+  let initialHealth = 200;
+
+  function updateBars() {
+    if(!yourData || !enemyData) return;
+
+    // Sağlık barı güncellemesi (yüzde hesabı ile)
+    const yourHealthPercent = (yourData.health / initialHealth) * 100;
+    const enemyHealthPercent = (enemyData.health / initialHealth) * 100;
+    
+    youHealthBar.style.width = yourHealthPercent + '%';
+    enemyHealthBar.style.width = enemyHealthPercent + '%';
+
+    youManaBar.style.width = (yourData.mana / 100 * 100) + '%';
+    enemyManaBar.style.width = (enemyData.mana / 100 * 100) + '%';
+
+    youHealthLabel.textContent = `Health: ${yourData.health}`;
+    enemyHealthLabel.textContent = `Health: ${enemyData.health}`;
+
+    youManaLabel.textContent = `Mana: ${yourData.mana}`;
+    enemyManaLabel.textContent = `Mana: ${enemyData.mana}`;
+    
+    // HYDRA efektlerini güncelle
+    if (yourData.hydraActive > 0) {
+      document.querySelector('#you .character').classList.add('hydra-active');
+    } else {
+      document.querySelector('#you .character').classList.remove('hydra-active');
+    }
+    
+    if (enemyData.hydraActive > 0) {
+      document.querySelector('#enemy .character').classList.add('hydra-active');
+    } else {
+      document.querySelector('#enemy .character').classList.remove('hydra-active');
+    }
+  }
+
+  function updateButtonStatus() {
+    const disabled = !yourTurn || !gameActive;
+    
+    attackBtn.disabled = disabled || (yourData && yourData.mana < 10);
+    defendBtn.disabled = disabled || (yourData && yourData.mana < 5);
+    skillBtn.disabled = disabled || (yourData && yourData.mana < 20);
+    hydraBtn.disabled = disabled || (yourData && yourData.mana < 30) || (yourData && yourData.hydraUsed);
+    manaBtn.disabled = disabled;
+  }
+
+  function setButtonsDisabled(disabled) {
+    gameActive = !disabled;
+    updateButtonStatus();
+  }
+
+  function setStatus(text) {
+    statusDiv.textContent = text;
+  }
+
+  function endGame() {
+    gameActive = false;
+    setButtonsDisabled(true);
+    yourTurn = false;
+  }
+
+  function addChatMessage(text, sender) {
+    const div = document.createElement('div');
+    div.classList.add('chat-message');
+    if(sender === 'you') div.classList.add('you');
+    else if(sender === 'enemy') div.classList.add('enemy');
+    else if(sender === 'system') div.classList.add('system');
+    
+    div.textContent = text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  
+  // Hasar animasyonunu göster
+  function showDamageEffect(elementId, amount) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const damageEl = document.createElement('div');
+    damageEl.className = 'damage-number';
+    damageEl.textContent = `-${amount}`;
+    damageEl.style.left = `${Math.random() * 30 + 35}%`;
+    damageEl.style.top = `${Math.random() * 30 + 35}%`;
+    
+    element.appendChild(damageEl);
+    
+    // Kart sallanma efekti
+    const card = element.closest('.player');
+    if (card) {
+      card.classList.add('shake-animation');
+      setTimeout(() => card.classList.remove('shake-animation'), 500);
+    }
+    
+    // Belirli bir süre sonra hasar efektini kaldır
+    setTimeout(() => damageEl.remove(), 800);
+  }
+  
+  // İyileştirme animasyonunu göster
+  function showHealEffect(elementId, amount) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const healEl = document.createElement('div');
+    healEl.className = 'heal-number';
+    healEl.textContent = `+${amount}`;
+    healEl.style.left = `${Math.random() * 30 + 35}%`;
+    healEl.style.top = `${Math.random() * 30 + 35}%`;
+    
+    element.appendChild(healEl);
+    
+    setTimeout(() => healEl.remove(), 800);
+  }
+  
+  // Mana animasyonunu göster
+  function showManaEffect(elementId, amount) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    const manaEl = document.createElement('div');
+    manaEl.className = 'mana-number';
+    manaEl.textContent = `+${amount}`;
+    manaEl.style.left = `${Math.random() * 30 + 35}%`;
+    manaEl.style.top = `${Math.random() * 30 + 35}%`;
+    
+    element.appendChild(manaEl);
+    
+    setTimeout(() => manaEl.remove(), 800);
+  }
+
+  // Socket.io olaylarını dinle  
+  socket.on('connect', () => {
+    setStatus("Connected. Waiting for opponent...");
+    setButtonsDisabled(true);
+    socket.emit('playerMove', { move: 'join' });
+  });
+
+  socket.on('waitingForOpponent', () => {
+    setStatus("Waiting for opponent...");
+    setButtonsDisabled(true);
+  });
+
+  socket.on('gameStart', (data) => {
+    yourIndex = data.yourIndex;
+    yourData = data.you;
+    enemyData = data.enemy;
+    initialHealth = data.initialHealth || 200;
+    yourTurn = yourIndex === 0;
+    gameActive = true;
+    
+    // Avatar resimleri ayarla
+    playerAvatar.src = data.playerAvatar || 'you.jpg';
+    enemyAvatar.src = data.enemyAvatar || 'enemy.jpg';
+    
+    updateBars();
+    updateButtonStatus();
+    
+    setStatus(yourTurn ? "Your turn" : "Opponent's turn");
+    
+    victoryMessage.style.display = 'none';
+    backToMenuBtn.style.display = 'none';
+    playAgainBtn.style.display = 'none';
+
+    chatMessages.innerHTML = '';
+    chatInput.disabled = false;
+    chatSendBtn.disabled = false;
+    
+    // Karakterlerde animasyon varsa temizle
+    document.querySelector('#you .character').classList.remove('hydra-active');
+    document.querySelector('#enemy .character').classList.remove('hydra-active');
+    
+    addChatMessage(`Game started with ${initialHealth} HP! ` + (yourTurn ? "It's your turn." : "Waiting for opponent's move."), 'system');
+  });
+
+  socket.on('moveConfirmed', (data) => {
+    yourData = data.you;
+    enemyData = data.enemy;
+    yourTurn = false;
+    
+    updateBars();
+    updateButtonStatus();
+    setStatus("Opponent's turn");
+    
+    // Hamle animasyonları
+    if (data.move === 'attack') {
+      showDamageEffect('enemy-damage-display', 15);
+    } else if (data.move === 'defend') {
+      showHealEffect('player-damage-display', 10);
+    } else if (data.move === 'skill') {
+      showDamageEffect('enemy-damage-display', 30);
+    } else if (data.move === 'mana') {
+      showManaEffect('player-damage-display', 15);
+    } else if (data.move === 'hydra') {
+      showDamageEffect('enemy-damage-display', 10);
+      
+      // HYDRA animasyonu
+      document.querySelector('#you .character').classList.add('hydra-active');
+      
+      addChatMessage(`HYDRA spell activated! Will deal damage for 3 more turns.`, 'system');
+    }
+    
+    // HYDRA aktifse, ilave hasar göster
+    if (yourData.hydraActive > 0) {
+      showDamageEffect('enemy-damage-display', 8);
+    }
+    
+    // Log mesajı
+    addChatMessage(`You used ${data.move}.`, 'system');
+  });
+
+  socket.on('enemyMove', (data) => {
+    yourData = data.you;
+    enemyData = data.enemy;
+    yourTurn = true;
+    
+    updateBars();
+    updateButtonStatus();
+    setStatus("Your turn");
+    
+    // Düşman hamle animasyonları
+    if (data.move === 'attack') {
+      showDamageEffect('player-damage-display', 15);
+    } else if (data.move === 'defend') {
+      showHealEffect('enemy-damage-display', 10);
+    } else if (data.move === 'skill') {
+      showDamageEffect('player-damage-display', 30);
+    } else if (data.move === 'mana') {
+      showManaEffect('enemy-damage-display', 15);
+    } else if (data.move === 'hydra') {
+      showDamageEffect('player-damage-display', 10);
+      
+      // HYDRA animasyonu
+      document.querySelector('#enemy .character').classList.add('hydra-active');
+      
+      addChatMessage(`Enemy used HYDRA spell! Will deal damage for 3 more turns.`, 'system');
+    }
+    
+    // HYDRA aktifse, ilave hasar göster
+    if (enemyData.hydraActive > 0) {
+      showDamageEffect('player-damage-display', 8);
+    }
+    
+    // Log mesajı
+    addChatMessage(`Enemy used ${data.move}.`, 'system');
+  });
+
+  socket.on('errorMessage', (msg) => {
+    setStatus(msg);
+    addChatMessage(`Error: ${msg}`, 'system');
+  });
+
+  socket.on('gameOver', ({ winner }) => {
+    endGame();
+
+    let message = '';
+    let color = '';
+
+    if ((winner === 'player' && yourIndex === 0) || (winner === 'enemy' && yourIndex === 1)) {
+      message = 'Victory!';
+      color = '#2ecc71';
+      
+      // Düşmanı öldür
+      enemyData.health = 0;
+      enemyHealthBar.style.width = '0%';
+      enemyHealthLabel.textContent = 'Health: 0';
+    } else {
+      message = 'Defeat!';
+      color = '#e74c3c';
+      
+      // Kendinizi öldürün
+      yourData.health = 0;
+      youHealthBar.style.width = '0%';
+      youHealthLabel.textContent = 'Health: 0';
+    }
+
+    setStatus(message);
+    victoryMessage.textContent = message;
+    victoryMessage.style.color = color;
+    victoryMessage.style.display = 'block';
+    
+    if (message === 'Victory!') {
+      victorySound.play().catch(e => console.log("Sound error:", e));
+    }
+
+    backToMenuBtn.style.display = 'inline-block';
+    playAgainBtn.style.display = 'inline-block';
+
+    chatInput.disabled = true;
+    chatSendBtn.disabled = true;
+    
+    addChatMessage(`Game over! ${message}`, 'system');
+  });
+
+  socket.on('chatMessage', ({ message, fromIndex }) => {
+    if(fromIndex !== yourIndex) {
+      addChatMessage(`Enemy: ${message}`, 'enemy');
+    }
+  });
+
+  socket.on('disconnect', () => {
+    setStatus("Connection lost. Trying to reconnect...");
+    gameActive = false;
+    updateButtonStatus();
+    
+    backToMenuBtn.style.display = 'inline-block';
+    playAgainBtn.style.display = 'inline-block';
+    
+    addChatMessage("Connection to the server lost. You can try to play again.", 'system');
+  });
+
+  function sendMove(move) {
+    if(!yourTurn || !gameActive) {
+      setStatus("Wait for your turn!");
+      return;
+    }
+    
+    socket.emit('playerMove', { move });
+  }
+
+  attackBtn.onclick = () => sendMove('attack');
+  defendBtn.onclick = () => sendMove('defend');
+  skillBtn.onclick = () => sendMove('skill');
+  manaBtn.onclick = () => sendMove('mana');
+  hydraBtn.onclick = () => sendMove('hydra');
+
+  backToMenuBtn.onclick = () => {
+    window.location.reload();
+  };
+  
+  playAgainBtn.onclick = () => {
+    socket.emit('playerMove', { move: 'join' });
+    
+    victoryMessage.style.display = 'none';
+    backToMenuBtn.style.display = 'none';
+    playAgainBtn.style.display = 'none';
+    
+    setStatus("Waiting for a new game...");
+    
+    chatMessages.innerHTML = '';
+    addChatMessage("Looking for a new opponent...", 'system');
+  };
+
+  // Chat gönderme
+  function sendChatMessage() {
+    const msg = chatInput.value.trim();
+    if(msg === '') return;
+    
+    socket.emit('chatMessage', { message: msg });
+    addChatMessage(`You: ${msg}`, 'you');
+    chatInput.value = '';
+    charCount.textContent = '0/20';
+    chatInput.focus();
+  }
+
+  chatSendBtn.onclick = sendChatMessage;
+  chatInput.addEventListener('keypress', e => {
+    if(e.key === 'Enter') sendChatMessage();
+  });
+
+  // Karakter sayısı göstergesi
+  chatInput.addEventListener('input', function() {
+    const length = chatInput.value.length;
+    charCount.textContent = `${length}/20`;
+    chatSendBtn.disabled = chatInput.value.trim() === '';
+  });
+</script>
+
 </body>
 </html>
