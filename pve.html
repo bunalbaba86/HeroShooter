@@ -1,212 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Monster Clash - PvE Mode</title>
-  <style>
-    body {
-      background: #111;
-      color: #eee;
-      font-family: sans-serif;
-      text-align: center;
-      padding: 20px;
-    }
-    #player, #bot {
-      border: 2px solid #eee;
-      margin: 10px auto;
-      padding: 15px;
-      width: 250px;
-      border-radius: 8px;
-      background: #222;
-    }
-    button {
-      padding: 10px 20px;
-      margin-top: 20px;
-      font-size: 16px;
-      cursor: pointer;
-      border-radius: 6px;
-      background-color: #333;
-      color: #eee;
-      border: none;
-    }
-    button:disabled {
-      background-color: #555;
-      cursor: not-allowed;
-    }
-    button:hover:enabled {
-      background-color: #555;
-    }
-    #log {
-      margin-top: 20px;
-      height: 150px;
-      overflow-y: auto;
-      border: 1px solid #eee;
-      padding: 10px;
-      background: #222;
-      border-radius: 8px;
-      text-align: left;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1v1 PvP Game - Main Menu</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Monster Clash - PvE Mode</h1>
-
-  <div id="player">
-    <h2>Your Monster</h2>
-    <p id="playerHealth">Health: 100</p>
-    <p id="playerMana">Mana: 50</p>
-  </div>
-
-  <div id="bot">
-    <h2>Bot's Monster</h2>
-    <p id="botHealth">Health: 100</p>
-    <p id="botMana">Mana: 50</p>
-  </div>
-
-  <div>
-    <button id="attackBtn" onclick="makeMove('attack')">Attack (Cost 10 Mana)</button>
-    <button id="defendBtn" onclick="makeMove('defend')">Defend (Cost 5 Mana)</button>
-    <button id="skillBtn" onclick="makeMove('skill')">Skill (Cost 20 Mana)</button>
-    <button id="manaBtn" onclick="makeMove('mana')">Mana Boost (Restore 15 Mana)</button>
-  </div>
-
-  <div id="log"></div>
-
-  <script>
-    let player = { health: 100, mana: 50 };
-    let bot = { health: 100, mana: 50 };
-
-    const cooldownTime = 3000;
-    let lastMoveTime = 0;
-
-    const buttons = {
-      attack: document.getElementById('attackBtn'),
-      defend: document.getElementById('defendBtn'),
-      skill: document.getElementById('skillBtn'),
-      mana: document.getElementById('manaBtn'),
-    };
-
-    function log(msg) {
-      const logDiv = document.getElementById('log');
-      logDiv.innerHTML += msg + '<br>';
-      logDiv.scrollTop = logDiv.scrollHeight;
-    }
-
-    function updateUI() {
-      document.getElementById('playerHealth').textContent = `Health: ${player.health}`;
-      document.getElementById('playerMana').textContent = `Mana: ${player.mana}`;
-      document.getElementById('botHealth').textContent = `Health: ${bot.health}`;
-      document.getElementById('botMana').textContent = `Mana: ${bot.mana}`;
-    }
-
-    function applyMove(attacker, defender, move) {
-      switch (move) {
-        case 'attack':
-          if (attacker.mana >= 10) {
-            attacker.mana -= 10;
-            defender.health -= 15;
-            log(`${attacker === player ? 'You' : 'Bot'} attacked! -15 health to opponent.`);
-          } else {
-            log('Not enough mana to attack!');
-          }
-          break;
-        case 'defend':
-          if (attacker.mana >= 5) {
-            attacker.mana -= 5;
-            attacker.health += 10;
-            if (attacker.health > 100) attacker.health = 100;
-            log(`${attacker === player ? 'You' : 'Bot'} defended and healed 10 health.`);
-          } else {
-            log('Not enough mana to defend!');
-          }
-          break;
-        case 'skill':
-          if (attacker.mana >= 20) {
-            attacker.mana -= 20;
-            defender.health -= 30;
-            log(`${attacker === player ? 'You' : 'Bot'} used skill! -30 health to opponent.`);
-          } else {
-            log('Not enough mana for skill!');
-          }
-          break;
-        case 'mana':
-          attacker.mana += 15;
-          if (attacker.mana > 50) attacker.mana = 50; // max mana 50
-          log(`${attacker === player ? 'You' : 'Bot'} used Mana Boost, restored 15 mana.`);
-          break;
-      }
-    }
-
-    function botTurn() {
-      if (bot.health <= 0) return;
-
-      const moves = ['attack', 'defend', 'skill', 'mana'];
-
-      let move;
-
-      do {
-        move = moves[Math.floor(Math.random() * moves.length)];
-      } while (
-        (move === 'attack' && bot.mana < 10) ||
-        (move === 'defend' && bot.mana < 5) ||
-        (move === 'skill' && bot.mana < 20)
-      );
-
-      applyMove(bot, player, move);
-      updateUI();
-
-      if (player.health <= 0) {
-        log('You lost!');
-        disableButtons();
-      } else {
-        log('Your turn!');
-        enableButtons();
-      }
-    }
-
-    function disableButtons() {
-      Object.values(buttons).forEach(btn => btn.disabled = true);
-    }
-
-    function enableButtons() {
-      Object.values(buttons).forEach(btn => btn.disabled = false);
-    }
-
-    function makeMove(move) {
-      const now = Date.now();
-      if (now - lastMoveTime < cooldownTime) {
-        log('Wait before making another move!');
-        return;
-      }
-
-      // Mana kontrolü (mana hareket için zorunlu değil çünkü mana hareketi restore de olabilir)
-      if (move !== 'mana') {
-        const manaCost = { attack: 10, defend: 5, skill: 20 };
-        if (player.mana < manaCost[move]) {
-          log('Not enough mana!');
-          return;
-        }
-      }
-
-      applyMove(player, bot, move);
-      updateUI();
-
-      lastMoveTime = now;
-      disableButtons();
-
-      if (bot.health <= 0) {
-        log('You won!');
-        return;
-      }
-
-      setTimeout(botTurn, 1500);
-    }
-
-    enableButtons();
-    updateUI();
-  </script>
+    <div class="container">
+        <div class="game-header">
+            <h1>1v1 PvP Turn-Based Game</h1>
+        </div>
+        
+        <div class="menu-container">
+            <a href="game.html" class="menu-button play-button">Play PvP</a>
+            <a href="index.html" class="menu-button">Back to Main Menu</a>
+        </div>
+        
+        <div class="game-info">
+            <h2>Game Modes</h2>
+            <p>Choose a game mode to play:</p>
+            <ul>
+                <li><strong>PvP:</strong> Challenge other players in real-time battles</li>
+                <li><strong>PvE:</strong> Coming soon - Practice against AI opponents</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="auth_client.js"></script>
+    <script>
+        // Check if user is logged in
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!requireLogin()) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            const userData = getCurrentUser();
+            
+            // Welcome message
+            if (userData) {
+                const welcomeMsg = document.createElement('div');
+                welcomeMsg.className = 'welcome-message';
+                welcomeMsg.textContent = `Welcome back, ${userData.username}!`;
+                document.querySelector('.game-header').appendChild(welcomeMsg);
+                
+                // Add logout button
+                const menuContainer = document.querySelector('.menu-container');
+                const logoutButton = document.createElement('a');
+                logoutButton.href = '#';
+                logoutButton.className = 'menu-button logout-button';
+                logoutButton.textContent = 'Logout';
+                logoutButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    logout();
+                });
+                menuContainer.appendChild(logoutButton);
+            }
+        });
+    </script>
 </body>
 </html>
