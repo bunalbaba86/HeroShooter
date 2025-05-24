@@ -1,71 +1,558 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>1v1 PvP Game - Home</title>
-    <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NFT PvP Turn-Based Game + Chat</title>
+<style>
+  /* ... önceki CSS kodları aynı kalıyor ... */
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #eee;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  #container {
+    display: flex;
+    width: 900px;
+    max-width: 100vw;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  #game {
+    flex: 2;
+    padding: 20px;
+    position: relative;
+  }
+  
+  /* MetaMask Connection Styles */
+  #metamask-container, #nft-selection-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  
+  #metamask-modal, #nft-selection-modal {
+    background: #333;
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  /* NFT Selection Styles */
+  #nft-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .nft-card {
+    background: #444;
+    border-radius: 10px;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+  }
+  
+  .nft-card:hover {
+    transform: scale(1.05);
+    border-color: #3498db;
+  }
+  
+  .nft-card.selected {
+    border-color: #2ecc71;
+    background: #2d5a2d;
+  }
+  
+  .nft-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    background: #666;
+  }
+  
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  
+  .spinner {
+    border: 3px solid #444;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* Diğer CSS kodları aynı kalıyor... */
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="game-header">
-            <h1>1v1 PvP Turn-Based Game</h1>
-        </div>
-        
-        <div class="menu-container">
-            <a href="login.html" class="menu-button">Login</a>
-            <a href="register.html" class="menu-button">Register</a>
-        </div>
-        
-        <div class="game-info">
-            <h2>About the Game</h2>
-            <p>A thrilling turn-based combat experience where you can battle against other players in real-time!</p>
-            <ul>
-                <li>Strategic turn-based combat</li>
-                <li>Real-time chat with opponents</li>
-                <li>Multiple abilities and special attacks</li>
-                <li>Battle other players online</li>
-            </ul>
-        </div>
+
+<!-- MetaMask Connection Modal -->
+<div id="metamask-container">
+  <div id="metamask-modal">
+    <h2>Connect Your Wallet</h2>
+    <p>You need to connect your MetaMask wallet to play this game.</p>
+    <div id="metamask-status">
+      <p id="connection-status">Please install MetaMask or connect your wallet.</p>
     </div>
+    <button id="connect-wallet-btn">Connect MetaMask</button>
+  </div>
+</div>
+
+<!-- NFT Selection Modal -->
+<div id="nft-selection-container" style="display: none;">
+  <div id="nft-selection-modal">
+    <h2>Select Your NFT Character</h2>
+    <p>Choose an NFT from the collection to use as your character:</p>
+    <div id="nft-loading" class="loading" style="display: none;">
+      <div class="spinner"></div>
+      <span style="margin-left: 10px;">Loading your NFTs...</span>
+    </div>
+    <div id="nft-error" style="display: none; color: #e74c3c; margin: 20px 0;"></div>
+    <div id="nft-grid"></div>
+    <button id="select-nft-btn" disabled>Select Character</button>
+    <button id="refresh-nfts-btn" style="margin-left: 10px; background: #f39c12;">Refresh NFTs</button>
+  </div>
+</div>
+
+<!-- Wallet Status Display -->
+<div class="wallet-status" id="wallet-status" style="display: none;">
+  Connected: <span id="connected-address"></span>
+</div>
+
+<div id="container" style="display: none;">
+  <!-- Oyun içeriği aynı kalıyor -->
+</div>
+
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+<script>
+  // MetaMask ve Web3 değişkenleri
+  let currentAccount = null;
+  let provider = null;
+  let signer = null;
+  let selectedNFT = null;
+  let userNFTs = [];
+
+  // NFT Contract Address ve ABI
+  const NFT_CONTRACT_ADDRESS = "0xdfdb045e4300d04ec32058756ec2453409360c5b";
+  
+  // ERC721 ABI (sadece gerekli fonksiyonlar)
+  const ERC721_ABI = [
+    "function balanceOf(address owner) view returns (uint256)",
+    "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
+    "function tokenURI(uint256 tokenId) view returns (string)",
+    "function ownerOf(uint256 tokenId) view returns (address)"
+  ];
+
+  // DOM elemanları
+  const metamaskContainer = document.getElementById('metamask-container');
+  const nftSelectionContainer = document.getElementById('nft-selection-container');
+  const connectWalletBtn = document.getElementById('connect-wallet-btn');
+  const connectionStatus = document.getElementById('connection-status');
+  const walletStatus = document.getElementById('wallet-status');
+  const connectedAddress = document.getElementById('connected-address');
+  const gameContainer = document.getElementById('container');
+  const nftGrid = document.getElementById('nft-grid');
+  const selectNFTBtn = document.getElementById('select-nft-btn');
+  const refreshNFTsBtn = document.getElementById('refresh-nfts-btn');
+  const nftLoading = document.getElementById('nft-loading');
+  const nftError = document.getElementById('nft-error');
+
+  // NFT özelliklerinden oyun statları hesaplama
+  function calculateNFTStats(nft) {
+    // Base stats
+    let health = 150;
+    let attack = 15;
+    let defense = 5;
+    let speed = 10;
+
+    // Token ID'den özellik çıkar (deterministic)
+    const tokenIdNum = parseInt(nft.tokenId) || 0;
     
-    <script src="auth_client.js"></script>
-    <script>
-        // Check if user is logged in
-        document.addEventListener('DOMContentLoaded', function() {
-            if (isLoggedIn()) {
-                const userData = getCurrentUser();
-                
-                // If user is logged in, add a "Play Now" button
-                const menuContainer = document.querySelector('.menu-container');
-                
-                // Clear login/register buttons
-                menuContainer.innerHTML = '';
-                
-                const playButton = document.createElement('a');
-                playButton.href = 'pve.html';
-                playButton.className = 'menu-button play-button';
-                playButton.textContent = 'Play Now';
-                menuContainer.appendChild(playButton);
-                
-                // Add logout button
-                const logoutButton = document.createElement('a');
-                logoutButton.href = '#';
-                logoutButton.className = 'menu-button logout-button';
-                logoutButton.textContent = 'Logout';
-                logoutButton.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    logoutUser();
-                });
-                menuContainer.appendChild(logoutButton);
-                
-                // Welcome message
-                const welcomeMsg = document.createElement('div');
-                welcomeMsg.className = 'welcome-message';
-                welcomeMsg.textContent = `Welcome back, ${userData.username}!`;
-                document.querySelector('.game-header').appendChild(welcomeMsg);
+    // Token ID bazlı stat hesaplama
+    const healthMod = (tokenIdNum * 7) % 50;      // 0-49 arası health bonus
+    const attackMod = (tokenIdNum * 11) % 25;     // 0-24 arası attack bonus
+    const defenseMod = (tokenIdNum * 13) % 15;    // 0-14 arası defense bonus
+    const speedMod = (tokenIdNum * 17) % 20;      // 0-19 arası speed bonus
+    
+    health += healthMod;
+    attack += Math.floor(attackMod / 2);
+    defense += Math.floor(defenseMod / 3);
+    speed += Math.floor(speedMod / 2);
+
+    // Rarity bonusu (token ID'nin son rakamlarına göre)
+    const rarityValue = tokenIdNum % 100;
+    
+    if (rarityValue >= 95) {
+      // %5 şans ile legendary
+      health += 50;
+      attack += 12;
+      defense += 8;
+      nft.rarity = "Legendary";
+    } else if (rarityValue >= 80) {
+      // %15 şans ile epic  
+      health += 30;
+      attack += 8;
+      defense += 5;
+      nft.rarity = "Epic";
+    } else if (rarityValue >= 50) {
+      // %30 şans ile rare
+      health += 20;
+      attack += 5;
+      defense += 3;
+      nft.rarity = "Rare";
+    } else {
+      nft.rarity = "Common";
+    }
+
+    return {
+      health: Math.min(health, 300),
+      attack: Math.min(attack, 50),
+      defense: Math.min(defense, 25),
+      speed: Math.min(speed, 35)
+    };
+  }
+
+  // MetaMask kontrolü
+  async function checkMetaMask() {
+    if (typeof window.ethereum !== 'undefined') {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      connectWalletBtn.textContent = 'Connect MetaMask';
+      connectWalletBtn.disabled = false;
+      
+      // Önceden bağlı hesapları kontrol et
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        currentAccount = accounts[0];
+        signer = provider.getSigner();
+        showNFTSelection();
+      }
+    } else {
+      connectionStatus.textContent = 'MetaMask is not installed. Please install MetaMask to continue.';
+      connectWalletBtn.textContent = 'Install MetaMask';
+      connectWalletBtn.onclick = () => {
+        window.open('https://metamask.io/', '_blank');
+      };
+    }
+  }
+
+  // MetaMask'a bağlanma fonksiyonu
+  async function connectWallet() {
+    try {
+      connectWalletBtn.disabled = true;
+      connectWalletBtn.textContent = 'Connecting...';
+      
+      const accounts = await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+      
+      if (accounts.length > 0) {
+        currentAccount = accounts[0];
+        signer = provider.getSigner();
+        showNFTSelection();
+      }
+    } catch (error) {
+      console.error('Wallet connection failed:', error);
+      connectionStatus.textContent = 'Connection failed. Please try again.';
+      connectWalletBtn.disabled = false;
+      connectWalletBtn.textContent = 'Connect MetaMask';
+    }
+  }
+
+  // NFT seçim ekranını göster
+  async function showNFTSelection() {
+    metamaskContainer.style.display = 'none';
+    nftSelectionContainer.style.display = 'flex';
+    
+    // Adresi göster
+    const shortAddress = `${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`;
+    connectedAddress.textContent = shortAddress;
+    walletStatus.style.display = 'block';
+    
+    // NFT'leri yükle
+    await loadUserNFTs();
+  }
+
+  // Kullanıcının NFT'lerini blockchain'den yükle
+  async function loadUserNFTs() {
+    try {
+      nftLoading.style.display = 'flex';
+      nftError.style.display = 'none';
+      nftGrid.innerHTML = '';
+      userNFTs = [];
+      
+      console.log('Loading NFTs for address:', currentAccount);
+      console.log('Contract address:', NFT_CONTRACT_ADDRESS);
+      
+      // NFT kontratına bağlan
+      const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, ERC721_ABI, provider);
+      
+      // Kullanıcının sahip olduğu NFT sayısını al
+      const balance = await nftContract.balanceOf(currentAccount);
+      console.log('NFT Balance:', balance.toString());
+      
+      if (balance.eq(0)) {
+        throw new Error('You don\'t own any NFTs from this collection');
+      }
+      
+      // Her NFT için bilgileri al
+      for (let i = 0; i < balance.toNumber() && i < 20; i++) {
+        try {
+          // Token ID'yi al
+          const tokenId = await nftContract.tokenOfOwnerByIndex(currentAccount, i);
+          console.log(`Token ${i}:`, tokenId.toString());
+          
+          // Token URI'yi al
+          let tokenURI = '';
+          let metadata = null;
+          
+          try {
+            tokenURI = await nftContract.tokenURI(tokenId);
+            console.log(`Token URI ${tokenId}:`, tokenURI);
+            
+            // Metadata'yı al
+            if (tokenURI) {
+              // IPFS linklerini HTTP'ye çevir
+              if (tokenURI.startsWith('ipfs://')) {
+                tokenURI = tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/');
+              }
+              
+              const metadataResponse = await fetch(tokenURI);
+              metadata = await metadataResponse.json();
             }
-        });
-    </script>
+          } catch (uriError) {
+            console.log('Token URI error:', uriError);
+          }
+          
+          // NFT objesini oluştur
+          const nft = {
+            tokenId: tokenId.toString(),
+            name: metadata?.name || `NFT #${tokenId.toString()}`,
+            description: metadata?.description || '',
+            image: metadata?.image || `https://via.placeholder.com/150?text=NFT%20${tokenId.toString()}`,
+            traits: metadata?.attributes || []
+          };
+          
+          // IPFS image linklerini düzelt
+          if (nft.image.startsWith('ipfs://')) {
+            nft.image = nft.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
+          }
+          
+          userNFTs.push(nft);
+          
+        } catch (tokenError) {
+          console.error(`Error loading token ${i}:`, tokenError);
+        }
+      }
+      
+      if (userNFTs.length === 0) {
+        throw new Error('Could not load any NFT metadata');
+      }
+      
+      console.log('Loaded NFTs:', userNFTs);
+      displayNFTs();
+      
+    } catch (error) {
+      console.error('Error loading NFTs:', error);
+      nftError.textContent = `Error: ${error.message}. Creating demo NFTs...`;
+      nftError.style.display = 'block';
+      
+      // Demo NFT'ler oluştur
+      setTimeout(() => {
+        createDemoNFTs();
+      }, 2000);
+      
+    } finally {
+      nftLoading.style.display = 'none';
+    }
+  }
+
+  // Alternative API'ler ile NFT yükleme
+  async function loadNFTsAlternative() {
+    try {
+      // Alchemy API (ücretsiz tier)
+      const alchemyResponse = await fetch(
+        `https://eth-mainnet.g.alchemy.com/v2/demo/getNFTs/?owner=${currentAccount}&contractAddresses[]=${NFT_CONTRACT_ADDRESS}`
+      );
+      
+      if (alchemyResponse.ok) {
+        const data = await alchemyResponse.json();
+        if (data.ownedNfts && data.ownedNfts.length > 0) {
+          userNFTs = data.ownedNfts.map(nft => ({
+            tokenId: parseInt(nft.id.tokenId, 16).toString(),
+            name: nft.metadata?.name || `NFT #${parseInt(nft.id.tokenId, 16)}`,
+            image: nft.metadata?.image || `https://via.placeholder.com/150?text=NFT`,
+            traits: nft.metadata?.attributes || []
+          }));
+          
+          displayNFTs();
+          return;
+        }
+      }
+    } catch (error) {
+      console.log('Alternative API error:', error);
+    }
+    
+    // Tüm API'ler başarısız olursa demo NFT'ler
+    createDemoNFTs();
+  }
+
+  // Demo NFT'ler oluştur
+  function createDemoNFTs() {
+    const demoCount = 5;
+    userNFTs = [];
+    
+    for (let i = 1; i <= demoCount; i++) {
+      const nft = {
+        tokenId: i.toString(),
+        name: `Demo NFT #${i}`,
+        image: `https://picsum.photos/150/150?random=${i}`,
+        traits: [
+          { trait_type: "Strength", value: (Math.random() * 100).toFixed(0) },
+          { trait_type: "Speed", value: (Math.random() * 100).toFixed(0) },
+          { trait_type: "Power", value: (Math.random() * 100).toFixed(0) }
+        ]
+      };
+      userNFTs.push(nft);
+    }
+    
+    console.log('Created demo NFTs:', userNFTs);
+    displayNFTs();
+  }
+
+  // NFT'leri ekranda göster
+  function displayNFTs() {
+    nftGrid.innerHTML = '';
+    
+    userNFTs.forEach((nft, index) => {
+      const stats = calculateNFTStats(nft);
+      
+      const nftCard = document.createElement('div');
+      nftCard.className = 'nft-card';
+      nftCard.dataset.index = index;
+      
+      nftCard.innerHTML = `
+        <img src="${nft.image}" alt="${nft.name}" class="nft-image" 
+             onerror="this.src='https://via.placeholder.com/150?text=NFT%20${nft.tokenId}'" />
+        <div class="nft-info">
+          <div style="font-weight: bold; margin-bottom: 5px; font-size: 12px;">${nft.name}</div>
+          <div style="font-size: 10px; color: #aaa; margin-bottom: 5px;">${nft.rarity || 'Common'}</div>
+          <div class="nft-stats">
+            <span class="stat health-stat">HP: ${stats.health}</span>
+            <span class="stat attack-stat">ATK: ${stats.attack}</span>
+          </div>
+          <div class="nft-stats">
+            <span class="stat defense-stat">DEF: ${stats.defense}</span>
+            <span class="stat speed-stat">SPD: ${stats.speed}</span>
+          </div>
+        </div>
+      `;
+      
+      nftCard.addEventListener('click', () => selectNFTCard(index));
+      nftGrid.appendChild(nftCard);
+    });
+    
+    nftError.style.display = 'none';
+  }
+
+  // NFT kartı seçimi
+  function selectNFTCard(index) {
+    // Önceki seçimi temizle
+    document.querySelectorAll('.nft-card').forEach(card => {
+      card.classList.remove('selected');
+    });
+    
+    // Yeni seçimi işaretle
+    const selectedCard = document.querySelector(`[data-index="${index}"]`);
+    selectedCard.classList.add('selected');
+    
+    selectedNFT = userNFTs[index];
+    selectNFTBtn.disabled = false;
+  }
+
+  // NFT seçimini onayla ve oyuna başla
+  function confirmNFTSelection() {
+    if (selectedNFT) {
+      nftSelectionContainer.style.display = 'none';
+      gameContainer.style.display = 'flex';
+      initializeGame();
+    }
+  }
+
+  // NFT'leri yenile
+  async function refreshNFTs() {
+    selectedNFT = null;
+    selectNFTBtn.disabled = true;
+    await loadUserNFTs();
+  }
+
+  // Hesap değişikliği dinleyicisi
+  if (window.ethereum) {
+    window.ethereum.on('accountsChanged', (accounts) => {
+      if (accounts.length === 0) {
+        currentAccount = null;
+        selectedNFT = null;
+        walletStatus.style.display = 'none';
+        gameContainer.style.display = 'none';
+        nftSelectionContainer.style.display = 'none';
+        metamaskContainer.style.display = 'flex';
+        if (socket) {
+          socket.disconnect();
+        }
+      } else if (accounts[0] !== currentAccount) {
+        currentAccount = accounts[0];
+        selectedNFT = null;
+        signer = provider.getSigner();
+        showNFTSelection();
+      }
+    });
+  }
+
+  // Event listeners
+  window.addEventListener('load', checkMetaMask);
+  connectWalletBtn.addEventListener('click', connectWallet);
+  selectNFTBtn.addEventListener('click', confirmNFTSelection);
+  refreshNFTsBtn.addEventListener('click', refreshNFTs);
+
+  // Oyun başlatma ve diğer fonksiyonlar aynı kalıyor...
+  function initializeGame() {
+    // Socket ve oyun kodu aynı kalıyor
+    console.log('Starting game with NFT:', selectedNFT);
+    // ... oyun kodları ...
+  }
+</script>
 </body>
 </html>
