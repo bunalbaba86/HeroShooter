@@ -746,7 +746,7 @@
     }
   }
 
-  /* Damage Numbers (DÜZELTİLDİ) */
+  /* Damage Numbers */
   .damage-number {
     position: absolute;
     font-size: 32px;
@@ -1127,10 +1127,7 @@
 </head>
 <body>
 
-<!-- Socket.io CDN -->
-<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-
-<!-- Rotation Prompt (YENİ) -->
+<!-- Rotation Prompt -->
 <div class="rotation-prompt" id="rotation-prompt">
   <div class="rotation-icon">📱</div>
   <h2>Rotate Your Device</h2>
@@ -1266,70 +1263,21 @@
   <div class="shield-effect enemy" id="enemy-shield"></div>
   
   <!-- Kryptomon Team Selectors -->
-  <div class="kryptomon-selector yours" id="your-team-selector">
-    <div class="kryptomon-slot active" data-index="0">
-      <img src="kryptomon1.png" alt="Kryptomon 1" />
-    </div>
-    <div class="kryptomon-slot" data-index="1">
-      <img src="kryptomon2.png" alt="Kryptomon 2" />
-    </div>
-    <div class="kryptomon-slot" data-index="2">
-      <img src="kryptomon3.png" alt="Kryptomon 3" />
-    </div>
-  </div>
-  
-  <div class="kryptomon-selector enemy" id="enemy-team-selector">
-    <div class="kryptomon-slot active" data-index="0">
-      <img src="kryptomon1.png" alt="Enemy Kryptomon 1" />
-    </div>
-    <div class="kryptomon-slot" data-index="1">
-      <img src="kryptomon2.png" alt="Enemy Kryptomon 2" />
-    </div>
-    <div class="kryptomon-slot" data-index="2">
-      <img src="kryptomon3.png" alt="Enemy Kryptomon 3" />
-    </div>
-  </div>
+  <div class="kryptomon-selector yours"></div>
+  <div class="kryptomon-selector enemy"></div>
   
   <!-- Control Panel -->
-  <div class="control-panel" id="control-panel">
-    <button class="action-btn attack" id="attack-btn" onclick="performMove('attack')" disabled>Attack (+2 MP)</button>
-    <button class="action-btn defend" id="defend-btn" onclick="performMove('defend')" disabled>Defend</button>
-    <button class="action-btn skill" id="skill-btn" onclick="performMove('skill')" disabled>Skill (2 MP)</button>
-    <button class="action-btn ultimate" id="ultimate-btn" onclick="performMove('ultimate')" disabled>Ultimate (6 MP)</button>
+  <div class="control-panel">
+    <button class="action-btn attack" onclick="performAction('attack')">Attack</button>
+    <button class="action-btn defend" onclick="performAction('defend')">Defend</button>
+    <button class="action-btn skill" onclick="performAction('skill')">Skill (2 Mana)</button>
+    <button class="action-btn ultimate" onclick="performAction('ultimate')">Ultimate (6 Mana)</button>
   </div>
 </div>
 
-<!-- Socket.io Script - Body'nin en sonuna ekle -->
 <script>
-// Socket.io CDN yedek yöntemi
-if (typeof io === 'undefined') {
-  const script = document.createElement('script');
-  script.src = '/socket.io/socket.io.js';
-  script.onerror = function() {
-    // Eğer local socket.io yüklenemezse, CDN dene
-    const cdnScript = document.createElement('script');
-    cdnScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js';
-    cdnScript.onload = function() {
-      console.log('✅ Socket.io loaded from CDN');
-      initializeGame();
-    };
-    cdnScript.onerror = function() {
-      console.error('❌ Socket.io could not be loaded');
-      alert('Unable to load Socket.io. Please refresh the page.');
-    };
-    document.head.appendChild(cdnScript);
-  };
-  script.onload = function() {
-    console.log('✅ Socket.io loaded from server');
-    initializeGame();
-  };
-  document.head.appendChild(script);
-} else {
-  initializeGame();
-}
-
-// Global variables
-let socket;
+// Global variables - SOCKET HATASı DÜZELTİLDİ
+let socket = null;
 let playerName = '';
 let walletAddress = '';
 let selectedKryptomon = [];
@@ -1337,6 +1285,90 @@ let gameState = null;
 let yourTurn = false;
 let isGuestMode = false;
 let orientationLocked = false;
+
+// Initialize game after DOM is loaded - HATA DÜZELTİLDİ
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('🎮 DOM loaded, initializing game...');
+  initializeGame();
+});
+
+// Initialize game function - SOCKET HATASı DÜZELTİLDİ
+function initializeGame() {
+  try {
+    console.log('🎮 Initializing Kryptomon Battle Arena...');
+    
+    // Setup socket connection - SOCKET HATA DÜZELTMESİ
+    socket = io();
+    
+    socket.on('connect', () => {
+      console.log('✅ Connected to server:', socket.id);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('❌ Disconnected from server');
+    });
+    
+    socket.on('gameStart', (data) => {
+      console.log('🎮 Game started!', data);
+      gameState = data;
+      yourTurn = data.yourTurn;
+      
+      // Show game container
+      document.getElementById('waiting-container').style.display = 'none';
+      document.getElementById('game-container').style.display = 'block';
+      
+      // Update player names
+      document.getElementById('your-game-name').textContent = playerName;
+      document.getElementById('enemy-game-name').textContent = data.enemyPlayerName;
+      
+      // Update UI
+      updateGameUI(data);
+      enterGameFullscreen();
+    });
+    
+    socket.on('moveConfirmed', (data) => {
+      console.log('Move confirmed:', data);
+      gameState = data;
+      yourTurn = data.yourTurn;
+      updateGameUI(data);
+      
+      // Show damage numbers - HASAR NUMARASI DÜZELTİLDİ
+      if (data.moveResult && data.moveResult.damage > 0) {
+        showDamageNumber(data.moveResult.damage, data.moveResult.target, data.moveResult.isCritical);
+      }
+    });
+    
+    socket.on('gameOver', (data) => {
+      console.log('Game over:', data);
+      alert(data.message);
+      location.reload();
+    });
+    
+    socket.on('waitingForOpponent', () => {
+      console.log('Waiting for opponent...');
+      showWaitingScreen();
+    });
+    
+    socket.on('emojiReceived', (data) => {
+      showEmojiAnimation(data.emoji);
+    });
+    
+    socket.on('errorMessage', (message) => {
+      console.error('Error:', message);
+      alert(`Error: ${message}`);
+    });
+    
+    // Setup orientation and touch
+    handleOrientationChange();
+    setupTouchOptimizations();
+    
+    console.log('✅ Game initialization complete!');
+    
+  } catch (error) {
+    console.error('❌ Game initialization failed:', error);
+    alert('Failed to initialize game. Please refresh the page.');
+  }
+}
 
 // Mobile orientation detection ve auto-rotation
 function handleOrientationChange() {
@@ -1399,84 +1431,6 @@ function enterGameFullscreen() {
     setTimeout(() => {
       requestFullscreen();
     }, 1000);
-  }
-}
-
-// Initialize game after socket.io is loaded
-function initializeGame() {
-  try {
-    console.log('🎮 Initializing Kryptomon Battle Arena...');
-    
-    // Setup socket connection
-    socket = io();
-    
-    socket.on('connect', () => {
-      console.log('✅ Connected to server:', socket.id);
-    });
-    
-    socket.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
-    });
-    
-    socket.on('gameStart', (data) => {
-      console.log('🎮 Game started!', data);
-      gameState = data;
-      yourTurn = data.yourTurn;
-      
-      // Show game container
-      document.getElementById('waiting-container').style.display = 'none';
-      document.getElementById('game-container').style.display = 'block';
-      
-      // Update player names
-      document.getElementById('your-game-name').textContent = playerName;
-      document.getElementById('enemy-game-name').textContent = data.enemyPlayerName;
-      
-      // Update UI
-      updateGameUI(data);
-      enterGameFullscreen();
-    });
-    
-    socket.on('moveConfirmed', (data) => {
-      console.log('Move confirmed:', data);
-      gameState = data;
-      yourTurn = data.yourTurn;
-      updateGameUI(data);
-      
-      // Show damage numbers (DÜZELTİLDİ)
-      if (data.moveResult && data.moveResult.damage > 0) {
-        showDamageNumber(data.moveResult.damage, data.moveResult.target, data.moveResult.isCritical);
-      }
-    });
-    
-    socket.on('gameOver', (data) => {
-      console.log('Game over:', data);
-      alert(data.message);
-      location.reload();
-    });
-    
-    socket.on('waitingForOpponent', () => {
-      console.log('Waiting for opponent...');
-      showWaitingScreen();
-    });
-    
-    socket.on('emojiReceived', (data) => {
-      showEmojiAnimation(data.emoji);
-    });
-    
-    socket.on('errorMessage', (message) => {
-      console.error('Error:', message);
-      alert(`Error: ${message}`);
-    });
-    
-    // Setup orientation and touch
-    handleOrientationChange();
-    setupTouchOptimizations();
-    
-    console.log('✅ Game initialization complete!');
-    
-  } catch (error) {
-    console.error('❌ Socket.io connection failed:', error);
-    alert('Failed to connect to game server. Please refresh the page.');
   }
 }
 
@@ -1788,13 +1742,13 @@ function surrender() {
   }
 }
 
-// Damage number display (DÜZELTİLDİ)
+// Damage number display - HASAR NUMARASI DÜZELTİLDİ
 function showDamageNumber(damage, target, isCritical = false) {
   const damageDiv = document.createElement('div');
   damageDiv.className = `damage-number ${isCritical ? 'critical' : ''}`;
   damageDiv.textContent = isCritical ? `${damage} CRIT!` : damage;
   
-  // Position based on target (DÜZELTİLDİ)
+  // Position based on target - HASAR NUMARASI DÜZELTİLDİ
   const targetKryptomon = target === 'enemy' ? 
     document.getElementById('enemy-kryptomon') : 
     document.getElementById('your-kryptomon');
@@ -1808,7 +1762,9 @@ function showDamageNumber(damage, target, isCritical = false) {
   document.body.appendChild(damageDiv);
   
   setTimeout(() => {
-    document.body.removeChild(damageDiv);
+    if (document.body.contains(damageDiv)) {
+      document.body.removeChild(damageDiv);
+    }
   }, 1500);
 }
 
@@ -1833,7 +1789,9 @@ function showEmojiAnimation(emoji) {
   document.body.appendChild(emojiDiv);
   
   setTimeout(() => {
-    document.body.removeChild(emojiDiv);
+    if (document.body.contains(emojiDiv)) {
+      document.body.removeChild(emojiDiv);
+    }
   }, 3000);
 }
 
@@ -1844,21 +1802,13 @@ window.addEventListener('orientationchange', () => {
 
 window.addEventListener('resize', handleOrientationChange);
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🎮 DOM loaded, waiting for Socket.io...');
-  
-  // Enter key support for player name
-  document.getElementById('player-name-input').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      setPlayerName();
-    }
-  });
+// Enter key support for player name
+document.getElementById('player-name-input').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    setPlayerName();
+  }
 });
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
