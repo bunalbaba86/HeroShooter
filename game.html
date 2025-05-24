@@ -20,7 +20,74 @@
     height: 100vh;
   }
 
-  /* MetaMask Connection Modal */
+  /* Player Name Selection Screen (YENİ) */
+  #player-name-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+
+  #player-name-modal {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  }
+
+  #player-name-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    border: 2px solid #3498db;
+    border-radius: 10px;
+    margin: 20px 0;
+    background: rgba(255,255,255,0.9);
+    color: #2c3e50;
+    text-align: center;
+  }
+
+  #player-name-input:focus {
+    outline: none;
+    border-color: #2ecc71;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.3);
+  }
+
+  #set-name-btn {
+    background: linear-gradient(45deg, #2ecc71, #27ae60);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin: 10px;
+    transition: all 0.3s ease;
+    width: 100%;
+  }
+
+  #set-name-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(46, 204, 113, 0.4);
+  }
+
+  #set-name-btn:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* MetaMask Connection Modal (GÜNCELLENENE) */
   #metamask-container, #nft-selection-container, #waiting-container {
     position: fixed;
     top: 0;
@@ -46,7 +113,62 @@
     box-shadow: 0 25px 50px rgba(0,0,0,0.5);
   }
 
-  /* Waiting for Opponent Screen */
+  /* Guest Mode Button (YENİ) */
+  #guest-mode-btn {
+    background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+  }
+
+  #guest-mode-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(149, 165, 166, 0.4);
+  }
+
+  /* Player name displays (YENİ) */
+  .player-name-display {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+  }
+
+  .game-player-name {
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    padding: 8px 15px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #FFD700;
+    border: 2px solid rgba(255,215,0,0.5);
+    backdrop-filter: blur(5px);
+  }
+
+  .trainer.left .game-player-name {
+    left: 30px;
+    transform: none;
+  }
+
+  .trainer.right .game-player-name {
+    right: 30px;
+    left: auto;
+    transform: none;
+  }
+
+  /* Waiting for Opponent Screen (GÜNCELLENENE) */
   #waiting-container {
     background: linear-gradient(45deg, rgba(0,0,0,0.8), rgba(50,50,50,0.9));
     backdrop-filter: blur(10px);
@@ -184,7 +306,6 @@
     display: none;
   }
 
-  /* Dojo Background Overlay */
   .dojo-bg {
     position: absolute;
     top: 0;
@@ -221,11 +342,11 @@
     transform: scale(1.1);
   }
 
-  /* Emoji Button (GÖRÜNÜR HALE GETİRİLDİ) */
+  /* Emoji Button */
   .emoji-btn {
     position: absolute;
     top: 20px;
-    left: 400px; /* Daha sağa kaydırıldı */
+    left: 100px;
     width: 50px;
     height: 50px;
     background: rgba(255, 215, 0, 0.9);
@@ -252,7 +373,7 @@
   .emoji-panel {
     position: absolute;
     top: 80px;
-    left: 370px;
+    left: 70px;
     background: rgba(0,0,0,0.9);
     padding: 15px;
     border-radius: 15px;
@@ -314,7 +435,7 @@
     }
   }
 
-  /* Top UI - Only Health Bars */
+  /* Top UI - Health Bars */
   .top-health-bars {
     position: absolute;
     top: 20px;
@@ -401,12 +522,30 @@
     50% { transform: translateX(-50%) scale(1.05); }
   }
 
-  /* Trainers (KÜÇÜLTÜLDÜ) */
+  /* Status Message */
+  .status-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    padding: 25px 40px;
+    border-radius: 20px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFD700;
+    text-align: center;
+    z-index: 200;
+    border: 3px solid #FFD700;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Trainers */
   .trainer {
     position: absolute;
     bottom: 80px;
-    width: 140px; /* KÜÇÜLTÜLDÜ */
-    height: 180px; /* KÜÇÜLTÜLDÜ */
+    width: 140px;
+    height: 180px;
     z-index: 50;
   }
 
@@ -425,7 +564,7 @@
     filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
   }
 
-  /* Mana Display (BAR YERİNE RAKAM) */
+  /* Mana Display */
   .trainer-mana {
     position: absolute;
     bottom: -30px;
@@ -451,7 +590,7 @@
   }
 
   .mana-text {
-    font-size: 18px; /* BÜYÜTÜLDÜ */
+    font-size: 18px;
     font-weight: bold;
     text-align: center;
     color: #87CEEB;
@@ -459,23 +598,25 @@
     letter-spacing: 1px;
   }
 
- /* Kryptomon Creatures (DAHA DA ORTAYA) */
-.kryptomon {
-  position: absolute;
-  width: 250px;
-  height: 250px;
-  z-index: 60;
-  transition: all 0.5s ease;
-}
-.kryptomon.yours {
-  left: 480px; /* DAHA ORTAYA */
-  bottom: 180px;
-}
-.kryptomon.enemy {
-  right: 480px; /* DAHA ORTAYA */
-  bottom: 180px;
-  transform: scaleX(-1);
-}
+  /* Kryptomon Creatures */
+  .kryptomon {
+    position: absolute;
+    width: 250px;
+    height: 250px;
+    z-index: 60;
+    transition: all 0.5s ease;
+  }
+
+  .kryptomon.yours {
+    left: 480px;
+    bottom: 180px;
+  }
+
+  .kryptomon.enemy {
+    right: 480px;
+    bottom: 180px;
+    transform: scaleX(-1);
+  }
 
   .kryptomon img {
     width: 100%;
@@ -498,67 +639,33 @@
   }
 
   @keyframes ultimateAttack {
-    0% { transform: translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
-    25% { transform: translateX(20px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
-    50% { transform: translateX(60px) scale(1.5); filter: hue-rotate(360deg) brightness(2); }
-    75% { transform: translateX(40px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
-    100% { transform: translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
+    0%, 100% { transform: translateX(0) scale(1); }
+    25% { transform: translateX(30px) scale(1.2); }
+    50% { transform: translateX(-20px) scale(1.3); }
+    75% { transform: translateX(25px) scale(1.2); }
   }
 
-  .kryptomon.enemy.attacking {
-    animation: attackBounceEnemy 0.6s ease-in-out;
-  }
-
-  .kryptomon.enemy.ultimate-attacking {
-    animation: ultimateAttackEnemy 1.5s ease-in-out;
-  }
-
-  @keyframes attackBounceEnemy {
-    0%, 100% { transform: scaleX(-1) translateX(0) scale(1); }
-    50% { transform: scaleX(-1) translateX(40px) scale(1.15); }
-  }
-
-  @keyframes ultimateAttackEnemy {
-    0% { transform: scaleX(-1) translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
-    25% { transform: scaleX(-1) translateX(20px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
-    50% { transform: scaleX(-1) translateX(60px) scale(1.5); filter: hue-rotate(360deg) brightness(2); }
-    75% { transform: scaleX(-1) translateX(40px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
-    100% { transform: scaleX(-1) translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
-  }
-
-  /* Damage Numbers (BELİRGİN HALE GETİRİLDİ) */
+  /* Damage Numbers */
   .damage-number {
     position: absolute;
-    font-size: 48px; /* BÜYÜTÜLDÜ */
+    font-size: 32px;
     font-weight: bold;
     color: #ff4444;
-    text-shadow: 4px 4px 8px rgba(0,0,0,0.9), 0 0 15px rgba(255,68,68,0.8);
     z-index: 150;
     pointer-events: none;
     animation: damageFloat 2.5s ease-out forwards;
-    border: 3px solid rgba(255,68,68,0.6);
-    background: rgba(0,0,0,0.7);
-    padding: 10px 15px;
-    border-radius: 15px;
-    backdrop-filter: blur(5px);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
   }
 
   .damage-number.critical {
     color: #FFD700;
-    font-size: 60px; /* DAHA BÜYÜK */
-    text-shadow: 4px 4px 8px rgba(0,0,0,0.9), 0 0 20px rgba(255, 215, 0, 1);
-    border-color: #FFD700;
-    animation: criticalDamage 2.5s ease-out forwards;
-  }
-
-  .damage-number.heal {
-    color: #44ff44;
-    border-color: rgba(68,255,68,0.6);
+    font-size: 40px;
+    text-shadow: 0 0 10px rgba(255,215,0,0.8);
   }
 
   @keyframes damageFloat {
     0% {
-      transform: translateY(0) scale(0.5);
+      transform: translateY(0) scale(0.8);
       opacity: 0;
     }
     20% {
@@ -575,60 +682,83 @@
     }
   }
 
-  @keyframes criticalDamage {
-    0% {
-      transform: translateY(0) scale(0.3);
-      opacity: 0;
-    }
-    15% {
-      transform: translateY(-20px) scale(1.5);
-      opacity: 1;
-    }
-    30% {
-      transform: translateY(-40px) scale(1.3);
-      opacity: 1;
-    }
-    80% {
-      transform: translateY(-90px) scale(1.1);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(-130px) scale(0.9);
-      opacity: 0;
-    }
+  /* Control Panel */
+  .control-panel {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 100;
   }
 
-  /* Kryptomon Selector */
+  .action-btn {
+    background: linear-gradient(135deg, #34495e, #2c3e50);
+    border: 3px solid #3498db;
+    color: #fff;
+    padding: 15px 25px;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    backdrop-filter: blur(10px);
+  }
+
+  .action-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+  }
+
+  .action-btn:disabled {
+    background: rgba(127, 140, 141, 0.5);
+    border-color: #7f8c8d;
+    color: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Kryptomon Team Selectors */
   .kryptomon-selector {
     position: absolute;
-    left: 40px;
-    top: 50%;
-    transform: translateY(-50%);
+    display: flex;
+    gap: 10px;
     z-index: 80;
   }
 
-  .kryptomon-slots {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+  .kryptomon-selector.yours {
+    bottom: 30px;
+    left: 30px;
+  }
+
+  .kryptomon-selector.enemy {
+    bottom: 30px;
+    right: 30px;
   }
 
   .kryptomon-slot {
-    width: 100px;
-    height: 100px;
-    border: 4px solid rgba(255,255,255,0.3);
-    border-radius: 20px;
-    background: rgba(0,0,0,0.6);
+    width: 70px;
+    height: 70px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    overflow: hidden;
     cursor: pointer;
     transition: all 0.3s ease;
-    overflow: hidden;
-    backdrop-filter: blur(5px);
+    background: rgba(0,0,0,0.5);
   }
 
   .kryptomon-slot.active {
     border-color: #FFD700;
-    background: rgba(255,215,0,0.3);
-    box-shadow: 0 0 25px rgba(255,215,0,0.6);
+    box-shadow: 0 0 20px rgba(255,215,0,0.6);
+    transform: scale(1.1);
+  }
+
+  .kryptomon-slot:hover:not(.active) {
+    border-color: #3498db;
+    transform: scale(1.05);
   }
 
   .kryptomon-slot img {
@@ -637,148 +767,57 @@
     object-fit: cover;
   }
 
-  /* Enemy Kryptomon Selector */
-  .enemy-kryptomon-selector {
-    position: absolute;
-    right: 40px;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 80;
-  }
-
-  /* Action Buttons (GÜNCELLENENE MANA COSTLARI) */
-  .action-area {
-    position: absolute;
-    bottom: 40px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 18px;
-    z-index: 100;
-  }
-
-  .action-btn {
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    border: 4px solid #FFD700;
-    background: radial-gradient(circle, rgba(0,0,0,0.8), rgba(50,50,50,0.9));
-    color: #fff;
-    font-size: 28px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-    backdrop-filter: blur(10px);
-    position: relative;
-  }
-
-  .action-btn .mana-cost {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: rgba(0,0,0,0.9);
-    color: #ff4444;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #ff4444;
-  }
-
-  .action-btn .mana-gain {
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: rgba(0,0,0,0.9);
-    color: #44ff44;
-    border-radius: 50%;
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #44ff44;
-  }
-
-  .action-btn:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 30px rgba(255,215,0,0.4);
-    border-color: #FFF;
-  }
-
-  .action-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-  }
-
-  .action-btn.attack { background: radial-gradient(circle, #ff4444, #cc0000); }
-  .action-btn.defend { background: radial-gradient(circle, #4444ff, #0000cc); }
-  .action-btn.special { background: radial-gradient(circle, #44ff44, #00cc00); }
-  .action-btn.ultimate { background: radial-gradient(circle, #ff44ff, #cc00cc); }
-
-  /* Loading and Error Messages */
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 30px 0;
-    font-size: 16px;
-  }
-
-  .spinner {
-    border: 3px solid rgba(255,255,255,0.3);
-    border-top: 3px solid #3498db;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    animation: spin 1s linear infinite;
-    margin-right: 15px;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
   /* Game Over Screen */
-  .game-over {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0,0,0,0.9);
-    padding: 40px;
-    border-radius: 20px;
-    text-align: center;
-    z-index: 200;
+  #game-over {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.95);
     display: none;
-    backdrop-filter: blur(15px);
-    border: 2px solid rgba(255,255,255,0.1);
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
   }
 
-  .game-over h2 {
+  .game-over-content {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    padding: 50px;
+    border-radius: 25px;
+    text-align: center;
+    max-width: 500px;
+    width: 90%;
+    border: 3px solid #3498db;
+  }
+
+  .game-over-content.victory {
+    border-color: #2ecc71;
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+  }
+
+  .game-over-content.defeat {
+    border-color: #e74c3c;
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+  }
+
+  #game-result {
     font-size: 48px;
+    font-weight: bold;
     margin-bottom: 20px;
+    text-shadow: 0 0 20px rgba(255,255,255,0.5);
   }
 
-  .game-over.victory h2 {
-    color: #2ecc71;
+  #game-message {
+    font-size: 20px;
+    margin-bottom: 30px;
+    opacity: 0.9;
   }
 
-  .game-over.defeat h2 {
-    color: #e74c3c;
+  .game-over-buttons {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
   }
 
   .game-over-btn {
@@ -788,55 +827,94 @@
     padding: 15px 30px;
     border-radius: 10px;
     font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
-    margin: 10px;
     transition: all 0.3s ease;
   }
 
   .game-over-btn:hover {
     transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
   }
 
-  /* Status Message */
-  .status-message {
-    position: absolute;
-    top: 180px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
-    padding: 18px 35px;
-    border-radius: 25px;
-    font-size: 20px;
-    font-weight: bold;
-    z-index: 90;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.2);
+  /* Loading Animation */
+  .loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px;
+    color: #3498db;
   }
 
-  /* Hide elements initially */
+  .spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(52, 152, 219, 0.3);
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* Utility Classes */
   .hidden {
     display: none !important;
   }
 
- /* Responsive için de güncelle */
-@media (max-width: 768px) {
-  .trainer { width: 100px; height: 140px; }
-  .kryptomon { width: 180px; height: 180px; }
-  .kryptomon.yours { left: 400px; } /* Responsive ortaya */
-  .kryptomon.enemy { right: 400px; } /* Responsive ortaya */
-  .action-btn { width: 70px; height: 70px; font-size: 22px; }
-  .health-bar-container { min-width: 200px; }
-  .kryptomon-slot { width: 80px; height: 80px; }
-  .top-health-bars { padding: 0 60px; }
-  .emoji-btn { left: 320px; }
-  .emoji-panel { left: 290px; }
-}
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .top-health-bars {
+      padding: 0 20px;
+    }
+    
+    .control-panel {
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    
+    .action-btn {
+      min-width: 100px;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+    
+    .kryptomon {
+      width: 200px;
+      height: 200px;
+    }
+    
+    .kryptomon.yours {
+      left: 50px;
+    }
+    
+    .kryptomon.enemy {
+      right: 50px;
+    }
+  }
 </style>
 </head>
 <body>
 
-<!-- MetaMask Connection Modal -->
-<div id="metamask-container">
+<!-- Player Name Selection Modal (YENİ) -->
+<div id="player-name-container">
+  <div id="player-name-modal">
+    <h2>⚔️ Choose Your Battle Name</h2>
+    <p>Enter your warrior name for the arena:</p>
+    <input type="text" id="player-name-input" placeholder="Enter your name..." maxlength="20">
+    <button id="set-name-btn" disabled>🛡️ Enter Arena</button>
+    <div style="margin-top: 15px; font-size: 12px; color: #aaa;">
+      Name must be 3-20 characters long
+    </div>
+  </div>
+</div>
+
+<!-- MetaMask Connection Modal (GÜNCELLENENE) -->
+<div id="metamask-container" class="hidden">
   <div id="metamask-modal">
     <h2>🦊 Connect Your Wallet</h2>
     <p>You need to connect your MetaMask wallet to play Kryptomon Battle Arena.</p>
@@ -844,6 +922,20 @@
       <p id="connection-status">Please install MetaMask or connect your wallet.</p>
     </div>
     <button id="connect-wallet-btn">Connect MetaMask</button>
+    
+    <!-- Guest Mode Section (YENİ) -->
+    <div style="margin: 30px 0; position: relative;">
+      <div style="border-top: 1px solid rgba(255,255,255,0.3); margin: 20px 0;"></div>
+      <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); padding: 0 15px; color: #aaa; font-size: 14px;">
+        OR
+      </div>
+    </div>
+    
+    <button id="guest-mode-btn">🎮 Continue as Guest</button>
+    
+    <div style="margin-top: 15px; font-size: 12px; color: #aaa; text-align: center;">
+      Guest mode uses demo Kryptomon for testing
+    </div>
   </div>
 </div>
 
@@ -868,19 +960,20 @@
   </div>
 </div>
 
-<!-- Waiting for Opponent Screen -->
+<!-- Waiting for Opponent Screen (GÜNCELLENENE) -->
 <div id="waiting-container" class="hidden">
   <div class="waiting-split">
     <div class="waiting-left">
-      <div style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">You</div>
+      <div class="player-name-display" id="your-name-display">Your Name</div>
       <img src="you.jpg" alt="You" style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid #3498db;">
+      <div style="font-size: 18px; margin-top: 15px; color: #3498db;">Ready to Battle!</div>
     </div>
     
     <div class="vs-divider">VS</div>
     
     <div class="waiting-right">
-      <div style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">Opponent</div>
-      <div class="question-mark">❓</div>
+      <div class="player-name-display" id="enemy-name-display">???</div>
+      <div class="question-mark" id="opponent-avatar">❓</div>
       <div style="font-size: 24px; margin-bottom: 20px;" id="waiting-status">Waiting for opponent...</div>
       <div class="waiting-countdown hidden" id="match-countdown">Match starting in: <span id="countdown-timer">20</span>s</div>
     </div>
@@ -949,12 +1042,13 @@
     🔍 Looking for opponent...
   </div>
 
-  <!-- Trainers with Mana Display (KÜÇÜLTÜLDÜ) -->
+  <!-- Trainers with Mana Display and Names (GÜNCELLENENE) -->
   <div class="trainer left">
     <img src="you.jpg" alt="Your Trainer">
     <div class="trainer-mana">
       <div class="mana-text" id="your-mana-text">MP: 0</div>
     </div>
+    <div class="game-player-name" id="your-game-name">Your Name</div>
   </div>
   
   <div class="trainer right">
@@ -962,73 +1056,75 @@
     <div class="trainer-mana">
       <div class="mana-text" id="enemy-mana-text">MP: 0</div>
     </div>
+    <div class="game-player-name" id="enemy-game-name">Enemy Name</div>
   </div>
 
-  <!-- Your Kryptomon (DAHA ORTAYA) -->
+  <!-- Your Kryptomon -->
   <div class="kryptomon yours" id="your-kryptomon">
     <img src="" alt="Your Kryptomon" id="your-kryptomon-img">
   </div>
 
-  <!-- Enemy Kryptomon (DAHA ORTAYA) -->
+  <!-- Enemy Kryptomon -->
   <div class="kryptomon enemy" id="enemy-kryptomon">
     <img src="" alt="Enemy Kryptomon" id="enemy-kryptomon-img">
   </div>
 
-  <!-- Your Kryptomon Selector -->
-  <div class="kryptomon-selector">
-    <div class="kryptomon-slots">
-      <div class="kryptomon-slot active" data-slot="0" id="slot-0">
-        <img src="" alt="Kryptomon 1">
-      </div>
-      <div class="kryptomon-slot" data-slot="1" id="slot-1">
-        <img src="" alt="Kryptomon 2">
-      </div>
-      <div class="kryptomon-slot" data-slot="2" id="slot-2">
-        <img src="" alt="Kryptomon 3">
-      </div>
+  <!-- Your Kryptomon Team Selector -->
+  <div class="kryptomon-selector yours" id="your-team-selector">
+    <div class="kryptomon-slot active" id="slot-0" onclick="switchKryptomon(0)">
+      <img src="" alt="Kryptomon 1">
+    </div>
+    <div class="kryptomon-slot" id="slot-1" onclick="switchKryptomon(1)">
+      <img src="" alt="Kryptomon 2">
+    </div>
+    <div class="kryptomon-slot" id="slot-2" onclick="switchKryptomon(2)">
+      <img src="" alt="Kryptomon 3">
     </div>
   </div>
 
-  <!-- Enemy Kryptomon Selector -->
-  <div class="enemy-kryptomon-selector">
-    <div class="kryptomon-slots">
-      <div class="kryptomon-slot" data-slot="0" id="enemy-slot-0">
-        <img src="" alt="Enemy Kryptomon 1">
-      </div>
-      <div class="kryptomon-slot active" data-slot="1" id="enemy-slot-1">
-        <img src="" alt="Enemy Kryptomon 2">
-      </div>
-      <div class="kryptomon-slot" data-slot="2" id="enemy-slot-2">
-        <img src="" alt="Enemy Kryptomon 3">
-      </div>
+  <!-- Enemy Kryptomon Team Display -->
+  <div class="kryptomon-selector enemy" id="enemy-team-display">
+    <div class="kryptomon-slot active" id="enemy-slot-0">
+      <img src="" alt="Enemy Kryptomon 1">
+    </div>
+    <div class="kryptomon-slot" id="enemy-slot-1">
+      <img src="" alt="Enemy Kryptomon 2">
+    </div>
+    <div class="kryptomon-slot" id="enemy-slot-2">
+      <img src="" alt="Enemy Kryptomon 3">
     </div>
   </div>
 
-  <!-- Action Buttons (GÜNCELLENENE) -->
-  <div class="action-area">
-    <button class="action-btn attack" id="attack-btn" title="Attack">
-      ⚔️
-      <div class="mana-gain">+2</div>
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <button class="action-btn" id="attack-btn" onclick="performAction('attack')">
+      ⚔️ Attack (+2 MP)
     </button>
-    <button class="action-btn defend" id="defend-btn" title="Defend">
-      🛡️
+    <button class="action-btn" id="defend-btn" onclick="performAction('defend')">
+      🛡️ Defend
     </button>
-    <button class="action-btn special" id="skill-btn" title="Special Skill">
-      ✨
-      <div class="mana-cost">-2</div>
+    <button class="action-btn" id="skill-btn" onclick="performAction('skill')">
+      🔥 Skill (-2 MP)
     </button>
-    <button class="action-btn ultimate" id="ultimate-btn" title="Ultimate Attack">
-      🐲
-      <div class="mana-cost">-6</div>
+    <button class="action-btn" id="ultimate-btn" onclick="performAction('ultimate')">
+      ⚡ Ultimate (-6 MP)
     </button>
   </div>
+</div>
 
-  <!-- Game Over Screen -->
-  <div class="game-over" id="game-over">
-    <h2 id="game-result">Victory!</h2>
-    <p id="game-message">You have defeated your opponent!</p>
-    <button class="game-over-btn" id="play-again-btn">🔄 Play Again</button>
-    <button class="game-over-btn" id="back-menu-btn">🏠 Back to Menu</button>
+<!-- Game Over Screen -->
+<div id="game-over">
+  <div class="game-over-content">
+    <div id="game-result">Victory!</div>
+    <div id="game-message">You have won the battle!</div>
+    <div class="game-over-buttons">
+      <button class="game-over-btn" id="play-again-btn" onclick="playAgain()">
+        🔄 Play Again
+      </button>
+      <button class="game-over-btn" id="back-menu-btn" onclick="backToMenu()">
+        🏠 Main Menu
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1037,7 +1133,7 @@
 <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <script>
-  // Global Variables
+  // Global Variables (GÜNCELLENENE)
   let currentAccount = null;
   let provider = null;
   let selectedKryptomon = [];
@@ -1052,17 +1148,24 @@
   let matchTimeLeft = 20;
   let isYourTurn = false;
   let playerIndex = 0;
+  let playerName = ''; // YENİ
+  let enemyPlayerName = ''; // YENİ
+  let isGuestMode = false; // YENİ
   
   // Contract Configuration
   const NFT_CONTRACT_ADDRESS = "0xdfdb045e4300d04ec32058756ec2453409360c5b";
   const BACKEND_URL = "https://pvpbackend.onrender.com";
 
-  // DOM Elements
+  // DOM Elements (GÜNCELLENENE)
+  const playerNameContainer = document.getElementById('player-name-container');
   const metamaskContainer = document.getElementById('metamask-container');
   const nftSelectionContainer = document.getElementById('nft-selection-container');
   const waitingContainer = document.getElementById('waiting-container');
   const gameContainer = document.getElementById('game-container');
+  const playerNameInput = document.getElementById('player-name-input');
+  const setNameBtn = document.getElementById('set-name-btn');
   const connectWalletBtn = document.getElementById('connect-wallet-btn');
+  const guestModeBtn = document.getElementById('guest-mode-btn'); // YENİ
   const connectionStatus = document.getElementById('connection-status');
   const nftGrid = document.getElementById('nft-grid');
   const selectNFTBtn = document.getElementById('select-nft-btn');
@@ -1073,6 +1176,44 @@
   const surrenderBtn = document.getElementById('surrender-btn');
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiPanel = document.getElementById('emoji-panel');
+
+  // Player name validation and setting (YENİ)
+  function validatePlayerName() {
+    const name = playerNameInput.value.trim();
+    const isValid = name.length >= 3 && name.length <= 20;
+    setNameBtn.disabled = !isValid;
+    return isValid;
+  }
+
+  function setPlayerName() {
+    if (validatePlayerName()) {
+      playerName = playerNameInput.value.trim();
+      console.log('Player name set:', playerName);
+      
+      // Update displays
+      document.getElementById('your-name-display').textContent = playerName;
+      document.getElementById('your-game-name').textContent = playerName;
+      
+      // Hide name selection, show MetaMask connection
+      playerNameContainer.classList.add('hidden');
+      metamaskContainer.classList.remove('hidden');
+      
+      checkMetaMask();
+    }
+  }
+
+  // Guest Mode Functions (YENİ)
+  function continueAsGuest() {
+    console.log('Continuing as guest');
+    isGuestMode = true;
+    currentAccount = 'guest_' + Math.random().toString(36).substr(2, 9); // Random guest ID
+    
+    // Update UI to show guest mode
+    connectionStatus.textContent = 'Playing as Guest - Using demo Kryptomon';
+    
+    // Hide MetaMask container and show NFT selection
+    showNFTSelection();
+  }
 
   // NFT Image URL function
   function getKryptomonImageURL(tokenId) {
@@ -1098,7 +1239,7 @@
     };
   }
 
-  // Surrender function (DÜZELTİLDİ)
+  // Surrender function
   function surrender() {
     console.log('Surrender button clicked!');
     if (socket && gameState) {
@@ -1109,7 +1250,7 @@
     }
   }
 
-  // Emoji functions (YENİ)
+  // Emoji functions
   function toggleEmojiPanel() {
     const panel = document.getElementById('emoji-panel');
     if (panel.style.display === 'none' || !panel.style.display) {
@@ -1125,10 +1266,7 @@
       socket.emit('sendEmoji', { emoji: emoji });
     }
     
-    // Close emoji panel
     document.getElementById('emoji-panel').style.display = 'none';
-    
-    // Show emoji animation on your side
     showEmojiAnimation(emoji, 'yours');
   }
 
@@ -1138,18 +1276,16 @@
     emojiDiv.className = 'emoji-animation';
     emojiDiv.textContent = emoji;
     
-    // Position based on side
     if (side === 'yours') {
-      emojiDiv.style.left = '420px';
+      emojiDiv.style.left = '480px';
       emojiDiv.style.bottom = '300px';
     } else {
-      emojiDiv.style.right = '420px';
+      emojiDiv.style.right = '480px';
       emojiDiv.style.bottom = '300px';
     }
     
     document.body.appendChild(emojiDiv);
     
-    // Remove after animation
     setTimeout(() => {
       if (emojiDiv.parentNode) {
         emojiDiv.parentNode.removeChild(emojiDiv);
@@ -1157,7 +1293,7 @@
     }, 3000);
   }
 
-  // Damage number display function (YENİ)
+  // Damage number display function
   function showDamageNumber(damage, isCritical = false, target = 'enemy') {
     console.log('Showing damage number:', damage, isCritical, target);
     
@@ -1170,18 +1306,16 @@
       damageDiv.textContent = `-${damage}`;
     }
     
-    // Position based on target
     if (target === 'enemy') {
-      damageDiv.style.right = '380px'; // Enemy position
+      damageDiv.style.right = '440px';
       damageDiv.style.bottom = '280px';
     } else {
-      damageDiv.style.left = '380px'; // Your position
+      damageDiv.style.left = '440px';
       damageDiv.style.bottom = '280px';
     }
     
     document.body.appendChild(damageDiv);
     
-    // Remove after animation
     setTimeout(() => {
       if (damageDiv.parentNode) {
         damageDiv.parentNode.removeChild(damageDiv);
@@ -1227,7 +1361,7 @@
   }
 
   function updateTimerDisplay(isMyTurn) {
-    document.getElementById('turn-status').textContent = isMyTurn ? 'Your Turn' : 'Enemy Turn';
+    document.getElementById('turn-status').textContent = isMyTurn ? `${playerName}'s Turn` : `${enemyPlayerName}'s Turn`;
     document.getElementById('timer-display').textContent = `Time: ${timeLeft}s`;
   }
 
@@ -1235,7 +1369,11 @@
     matchTimeLeft = 20;
     document.getElementById('match-countdown').classList.remove('hidden');
     document.getElementById('countdown-timer').textContent = matchTimeLeft;
-    document.getElementById('waiting-status').textContent = 'Opponent found!';
+    document.getElementById('waiting-status').textContent = `Opponent found: ${enemyPlayerName}!`;
+    
+    // Show enemy info
+    document.getElementById('enemy-name-display').textContent = enemyPlayerName;
+    document.getElementById('opponent-avatar').textContent = '🛡️';
     
     matchCountdown = setInterval(() => {
       matchTimeLeft--;
@@ -1249,8 +1387,13 @@
     }, 1000);
   }
 
-  // MetaMask Connection
+  // MetaMask Connection (GÜNCELLENENE)
   async function checkMetaMask() {
+    if (isGuestMode) {
+      // Skip MetaMask check for guest mode
+      return;
+    }
+
     if (typeof window.ethereum !== 'undefined') {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       connectWalletBtn.textContent = 'Connect MetaMask';
@@ -1262,13 +1405,18 @@
         showNFTSelection();
       }
     } else {
-      connectionStatus.textContent = 'MetaMask not detected. Please install MetaMask.';
+      connectionStatus.textContent = 'MetaMask not detected. Please install MetaMask or continue as guest.';
       connectWalletBtn.textContent = 'Install MetaMask';
       connectWalletBtn.onclick = () => window.open('https://metamask.io/', '_blank');
     }
   }
 
   async function connectWallet() {
+    if (isGuestMode) {
+      continueAsGuest();
+      return;
+    }
+
     try {
       connectWalletBtn.disabled = true;
       connectWalletBtn.textContent = 'Connecting...';
@@ -1283,16 +1431,27 @@
       }
     } catch (error) {
       console.error('Connection failed:', error);
-      connectionStatus.textContent = 'Connection failed. Please try again.';
+      connectionStatus.textContent = 'Connection failed. Please try again or continue as guest.';
       connectWalletBtn.disabled = false;
       connectWalletBtn.textContent = 'Connect MetaMask';
     }
   }
 
-  // NFT Selection
+  // NFT Selection (GÜNCELLENENE)
   async function showNFTSelection() {
     metamaskContainer.classList.add('hidden');
     nftSelectionContainer.classList.remove('hidden');
+    
+    // Update UI based on mode
+    if (isGuestMode) {
+      // Update title for guest mode
+      document.querySelector('#nft-selection-modal h2').textContent = '⚔️ Select Your Demo Kryptomon Team';
+      document.querySelector('#nft-selection-modal p').textContent = 'Choose 3 demo Kryptomon to form your battle team:';
+      
+      // Hide refresh button for guest mode
+      refreshNFTsBtn.style.display = 'none';
+    }
+    
     await loadUserNFTs();
   }
 
@@ -1334,7 +1493,7 @@
       userNFTs.push(nft);
     }
     
-    console.log('Created demo Kryptomon with local PNGs:', userNFTs);
+    console.log('Created demo Kryptomon:', userNFTs);
     displayNFTs();
   }
 
@@ -1346,7 +1505,10 @@
       nftCard.className = 'nft-card';
       nftCard.dataset.index = index;
       
+      const modeLabel = isGuestMode ? '<div style="font-size: 10px; color: #3498db; margin-bottom: 5px;">🎮 DEMO</div>' : '';
+      
       nftCard.innerHTML = `
+        ${modeLabel}
         <img src="${nft.image}" alt="${nft.name}" class="nft-image" />
         <div style="font-weight: bold; margin-bottom: 8px; font-size: 14px;">${nft.name}</div>
         <div style="font-size: 12px; color: #aaa; margin-bottom: 5px;">
@@ -1395,6 +1557,7 @@
   // Game Initialization
   function initializeGame() {
     console.log('Starting game with Kryptomon team:', selectedKryptomon);
+    console.log('Is guest mode:', isGuestMode);
     
     for (let i = 0; i < 3; i++) {
       const slot = document.getElementById(`slot-${i}`);
@@ -1433,7 +1596,7 @@
     }
   }
 
-  // Socket.io Connection
+  // Socket.io Connection (GÜNCELLENENE)
   function connectToGame() {
     socket = io(BACKEND_URL, {
       transports: ['websocket', 'polling']
@@ -1446,7 +1609,9 @@
       socket.emit('playerMove', {
         move: 'join',
         walletAddress: currentAccount,
-        selectedKryptomon: selectedKryptomon
+        selectedKryptomon: selectedKryptomon,
+        playerName: playerName, // YENİ
+        isGuestMode: isGuestMode // YENİ
       });
     });
 
@@ -1459,6 +1624,12 @@
       console.log('Game started!', data);
       gameState = data;
       playerIndex = data.yourIndex;
+      enemyPlayerName = data.enemyPlayerName; // YENİ
+      
+      console.log('Enemy player name:', enemyPlayerName);
+      
+      // Update enemy name displays
+      document.getElementById('enemy-game-name').textContent = enemyPlayerName;
       
       enemyKryptomonTeam = data.enemyKryptomonTeam;
       
@@ -1490,7 +1661,6 @@
       gameState = data;
       updateGameUI(data);
       
-      // Show damage if there was any
       if (data.moveResult && data.moveResult.damage > 0) {
         const target = data.moveResult.target;
         showDamageNumber(data.moveResult.damage, data.moveResult.isCritical, target);
@@ -1505,7 +1675,6 @@
       showGameOver(data.winner, data.message);
     });
 
-    // Emoji reception (YENİ)
     socket.on('emojiReceived', (data) => {
       console.log('Emoji received:', data);
       showEmojiAnimation(data.emoji, 'enemy');
@@ -1533,7 +1702,7 @@
     document.getElementById('your-health-text').textContent = `HP: ${data.you.health}/${data.you.maxHealth}`;
     document.getElementById('enemy-health-text').textContent = `HP: ${data.enemy.health}/${data.enemy.maxHealth}`;
     
-    // Update mana display (sadece rakam)
+    // Update mana display
     document.getElementById('your-mana-text').textContent = `MP: ${data.you.mana}`;
     document.getElementById('enemy-mana-text').textContent = `MP: ${data.enemy.mana}`;
     
@@ -1548,7 +1717,7 @@
       document.getElementById('enemy-active-avatar').src = data.enemyActiveKryptomon.image;
     }
     
-    // Enable/disable action buttons based on turn and mana
+    // Enable/disable action buttons
     const isYourTurn = data.yourTurn;
     document.getElementById('attack-btn').disabled = !isYourTurn;
     document.getElementById('defend-btn').disabled = !isYourTurn;
@@ -1561,7 +1730,6 @@
     
     console.log('Performing action:', action);
     
-    // Add animation
     const yourKryptomon = document.getElementById('your-kryptomon');
     if (action === 'ultimate') {
       yourKryptomon.classList.add('ultimate-attacking');
@@ -1613,10 +1781,24 @@
     location.reload();
   }
 
-  // Event Listeners (DÜZELTİLDİ)
+  // Event Listeners (GÜNCELLENENE)
   document.addEventListener('DOMContentLoaded', () => {
+    // Player name input validation
+    playerNameInput.addEventListener('input', validatePlayerName);
+    playerNameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && validatePlayerName()) {
+        setPlayerName();
+      }
+    });
+    
+    // Player name setting
+    setNameBtn.addEventListener('click', setPlayerName);
+    
     // MetaMask connection
     connectWalletBtn.addEventListener('click', connectWallet);
+    
+    // Guest mode (YENİ)
+    guestModeBtn.addEventListener('click', continueAsGuest);
     
     // NFT selection
     selectNFTBtn.addEventListener('click', confirmKryptomonSelection);
@@ -1633,10 +1815,10 @@
     document.getElementById('slot-1').addEventListener('click', () => switchKryptomon(1));
     document.getElementById('slot-2').addEventListener('click', () => switchKryptomon(2));
     
-    // Surrender button (DÜZELTİLDİ)
+    // Surrender button
     surrenderBtn.addEventListener('click', surrender);
     
-    // Emoji system (YENİ)
+    // Emoji system
     emojiBtn.addEventListener('click', toggleEmojiPanel);
     
     // Emoji panel items
@@ -1658,8 +1840,8 @@
       }
     });
     
-    // Initialize
-    checkMetaMask();
+    // Initialize - Start with player name input
+    console.log('Application initialized');
   });
 </script>
 </body>
