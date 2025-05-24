@@ -21,7 +21,7 @@
   }
 
   /* MetaMask Connection Modal */
-  #metamask-container, #nft-selection-container {
+  #metamask-container, #nft-selection-container, #waiting-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -44,6 +44,80 @@
     max-height: 85vh;
     overflow-y: auto;
     box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  }
+
+  /* Waiting for Opponent Screen */
+  #waiting-container {
+    background: linear-gradient(45deg, rgba(0,0,0,0.8), rgba(50,50,50,0.9));
+    backdrop-filter: blur(10px);
+  }
+
+  .waiting-screen {
+    text-align: center;
+    color: #fff;
+  }
+
+  .waiting-split {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+  }
+
+  .waiting-left, .waiting-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .waiting-left {
+    background: linear-gradient(45deg, rgba(52, 152, 219, 0.3), rgba(41, 128, 185, 0.5));
+    border-right: 4px solid rgba(255,255,255,0.3);
+  }
+
+  .waiting-right {
+    background: linear-gradient(45deg, rgba(231, 76, 60, 0.3), rgba(192, 57, 43, 0.5));
+  }
+
+  .vs-divider {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 120px;
+    color: #FFD700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+    z-index: 10;
+    animation: pulse 2s infinite;
+  }
+
+  .question-mark {
+    font-size: 200px;
+    color: #ccc;
+    margin-bottom: 30px;
+    animation: bounce 2s infinite;
+  }
+
+  .waiting-countdown {
+    font-size: 48px;
+    color: #FFD700;
+    font-weight: bold;
+    margin-top: 30px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+
+  @keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-20px); }
+    60% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
   }
 
   #connect-wallet-btn, #select-nft-btn, #refresh-nfts-btn {
@@ -147,7 +221,99 @@
     transform: scale(1.1);
   }
 
-  /* Top UI - Only Health Bars (BÜYÜTÜLDÜ ve AYRILDI) */
+  /* Emoji Button */
+  .emoji-btn {
+    position: absolute;
+    top: 20px;
+    left: 350px; /* Kryptomon'un üstünde */
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 215, 0, 0.9);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    color: #000;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    z-index: 100;
+  }
+
+  .emoji-btn:hover {
+    background: rgba(255, 215, 0, 1);
+    transform: scale(1.1);
+  }
+
+  /* Emoji Panel */
+  .emoji-panel {
+    position: absolute;
+    top: 80px;
+    left: 320px;
+    background: rgba(0,0,0,0.9);
+    padding: 15px;
+    border-radius: 15px;
+    border: 2px solid #FFD700;
+    display: none;
+    backdrop-filter: blur(10px);
+    z-index: 101;
+  }
+
+  .emoji-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .emoji-item {
+    width: 40px;
+    height: 40px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .emoji-item:hover {
+    background: rgba(255,215,0,0.3);
+    transform: scale(1.1);
+  }
+
+  /* Emoji Animation */
+  .emoji-animation {
+    position: absolute;
+    font-size: 60px;
+    z-index: 200;
+    pointer-events: none;
+    animation: emojiFloat 3s ease-out forwards;
+  }
+
+  @keyframes emojiFloat {
+    0% {
+      transform: translateY(0) scale(0.5);
+      opacity: 0;
+    }
+    20% {
+      transform: translateY(-50px) scale(1);
+      opacity: 1;
+    }
+    80% {
+      transform: translateY(-100px) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-150px) scale(0.5);
+      opacity: 0;
+    }
+  }
+
+  /* Top UI - Only Health Bars */
   .top-health-bars {
     position: absolute;
     top: 20px;
@@ -181,13 +347,13 @@
     background: rgba(0,0,0,0.8);
     padding: 15px 25px;
     border-radius: 30px;
-    min-width: 320px; /* BÜYÜTÜLDÜ */
+    min-width: 320px;
     backdrop-filter: blur(10px);
     border: 2px solid rgba(255,255,255,0.1);
   }
 
   .health-bar {
-    height: 24px; /* BÜYÜTÜLDÜ */
+    height: 24px;
     background: rgba(255,255,255,0.2);
     border-radius: 12px;
     overflow: hidden;
@@ -201,7 +367,7 @@
   }
 
   .health-text {
-    font-size: 16px; /* BÜYÜTÜLDÜ */
+    font-size: 16px;
     font-weight: bold;
     text-align: center;
   }
@@ -258,10 +424,10 @@
     filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
   }
 
-  /* Mana Bars (Trainer altında) */
+  /* Mana Bars (Trainer altında - AŞAĞIYA İNDİRİLDİ) */
   .trainer-mana {
     position: absolute;
-    bottom: 50px;
+    bottom: -30px; /* AŞAĞIYA İNDİRİLDİ */
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0,0,0,0.8);
@@ -304,7 +470,7 @@
     color: #87CEEB;
   }
 
-  /* Kryptomon Creatures (ORTAYA TAŞINDI) */
+  /* Kryptomon Creatures */
   .kryptomon {
     position: absolute;
     width: 250px;
@@ -335,13 +501,29 @@
     animation: attackBounce 0.6s ease-in-out;
   }
 
+  .kryptomon.ultimate-attacking {
+    animation: ultimateAttack 1.5s ease-in-out;
+  }
+
   @keyframes attackBounce {
     0%, 100% { transform: translateX(0) scale(1); }
     50% { transform: translateX(40px) scale(1.15); }
   }
 
+  @keyframes ultimateAttack {
+    0% { transform: translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
+    25% { transform: translateX(20px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
+    50% { transform: translateX(60px) scale(1.5); filter: hue-rotate(360deg) brightness(2); }
+    75% { transform: translateX(40px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
+    100% { transform: translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
+  }
+
   .kryptomon.enemy.attacking {
     animation: attackBounceEnemy 0.6s ease-in-out;
+  }
+
+  .kryptomon.enemy.ultimate-attacking {
+    animation: ultimateAttackEnemy 1.5s ease-in-out;
   }
 
   @keyframes attackBounceEnemy {
@@ -349,7 +531,56 @@
     50% { transform: scaleX(-1) translateX(40px) scale(1.15); }
   }
 
-  /* Kryptomon Selector (BÜYÜTÜLDÜ) */
+  @keyframes ultimateAttackEnemy {
+    0% { transform: scaleX(-1) translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
+    25% { transform: scaleX(-1) translateX(20px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
+    50% { transform: scaleX(-1) translateX(60px) scale(1.5); filter: hue-rotate(360deg) brightness(2); }
+    75% { transform: scaleX(-1) translateX(40px) scale(1.3); filter: hue-rotate(180deg) brightness(1.5); }
+    100% { transform: scaleX(-1) translateX(0) scale(1); filter: hue-rotate(0deg) brightness(1); }
+  }
+
+  /* Damage Numbers */
+  .damage-number {
+    position: absolute;
+    font-size: 36px;
+    font-weight: bold;
+    color: #ff4444;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    z-index: 150;
+    pointer-events: none;
+    animation: damageFloat 2s ease-out forwards;
+  }
+
+  .damage-number.critical {
+    color: #FFD700;
+    font-size: 48px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  }
+
+  .damage-number.heal {
+    color: #44ff44;
+  }
+
+  @keyframes damageFloat {
+    0% {
+      transform: translateY(0) scale(0.5);
+      opacity: 0;
+    }
+    20% {
+      transform: translateY(-30px) scale(1.2);
+      opacity: 1;
+    }
+    80% {
+      transform: translateY(-80px) scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-120px) scale(0.8);
+      opacity: 0;
+    }
+  }
+
+  /* Kryptomon Selector */
   .kryptomon-selector {
     position: absolute;
     left: 40px;
@@ -397,7 +628,7 @@
     z-index: 80;
   }
 
-  /* Action Buttons (MANA COST EKLENDİ) */
+  /* Action Buttons (GÜNCELLENENE MANA COSTLARI) */
   .action-area {
     position: absolute;
     bottom: 40px;
@@ -432,7 +663,7 @@
     top: -5px;
     right: -5px;
     background: rgba(0,0,0,0.9);
-    color: #4488ff;
+    color: #ff4444;
     border-radius: 50%;
     width: 24px;
     height: 24px;
@@ -441,7 +672,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2px solid #4488ff;
+    border: 2px solid #ff4444;
   }
 
   .action-btn .mana-gain {
@@ -478,7 +709,6 @@
   .action-btn.defend { background: radial-gradient(circle, #4444ff, #0000cc); }
   .action-btn.special { background: radial-gradient(circle, #44ff44, #00cc00); }
   .action-btn.ultimate { background: radial-gradient(circle, #ff44ff, #cc00cc); }
-  .action-btn.mana { background: radial-gradient(circle, #44ffff, #00cccc); }
 
   /* Loading and Error Messages */
   .loading {
@@ -580,6 +810,8 @@
     .health-bar-container { min-width: 200px; }
     .kryptomon-slot { width: 80px; height: 80px; }
     .top-health-bars { padding: 0 60px; }
+    .emoji-btn { left: 280px; }
+    .emoji-panel { left: 250px; }
   }
 </style>
 </head>
@@ -618,12 +850,52 @@
   </div>
 </div>
 
+<!-- Waiting for Opponent Screen -->
+<div id="waiting-container" class="hidden">
+  <div class="waiting-split">
+    <div class="waiting-left">
+      <div style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">You</div>
+      <img src="you.jpg" alt="You" style="width: 200px; height: 200px; border-radius: 50%; border: 4px solid #3498db;">
+    </div>
+    
+    <div class="vs-divider">VS</div>
+    
+    <div class="waiting-right">
+      <div style="font-size: 32px; font-weight: bold; margin-bottom: 20px;">Opponent</div>
+      <div class="question-mark">❓</div>
+      <div style="font-size: 24px; margin-bottom: 20px;" id="waiting-status">Waiting for opponent...</div>
+      <div class="waiting-countdown hidden" id="match-countdown">Match starting in: <span id="countdown-timer">20</span>s</div>
+    </div>
+  </div>
+</div>
+
 <!-- Game Arena -->
 <div id="game-container">
   <div class="dojo-bg"></div>
   
   <!-- Surrender Button -->
   <button class="surrender-btn" id="surrender-btn" title="Surrender">🏳️</button>
+
+  <!-- Emoji Button -->
+  <button class="emoji-btn" id="emoji-btn" title="Send Emoji">😀</button>
+
+  <!-- Emoji Panel -->
+  <div class="emoji-panel" id="emoji-panel">
+    <div class="emoji-grid">
+      <div class="emoji-item" data-emoji="😀">😀</div>
+      <div class="emoji-item" data-emoji="😂">😂</div>
+      <div class="emoji-item" data-emoji="😎">😎</div>
+      <div class="emoji-item" data-emoji="😢">😢</div>
+      <div class="emoji-item" data-emoji="😡">😡</div>
+      <div class="emoji-item" data-emoji="🤔">🤔</div>
+      <div class="emoji-item" data-emoji="👍">👍</div>
+      <div class="emoji-item" data-emoji="👎">👎</div>
+      <div class="emoji-item" data-emoji="❤️">❤️</div>
+      <div class="emoji-item" data-emoji="💪">💪</div>
+      <div class="emoji-item" data-emoji="🔥">🔥</div>
+      <div class="emoji-item" data-emoji="⚡">⚡</div>
+    </div>
+  </div>
 
   <!-- Top Health Bars -->
   <div class="top-health-bars">
@@ -664,9 +936,9 @@
     <img src="you.jpg" alt="Your Trainer">
     <div class="trainer-mana">
       <div class="mana-bar">
-        <div class="mana-fill" id="your-mana" style="width: 100%;"></div>
+        <div class="mana-fill" id="your-mana" style="width: 0%;"></div>
       </div>
-      <div class="mana-text" id="your-mana-text">MP: 50/100</div>
+      <div class="mana-text" id="your-mana-text">MP: 0/100</div>
     </div>
   </div>
   
@@ -674,9 +946,9 @@
     <img src="enemy.jpg" alt="Enemy Trainer">
     <div class="trainer-mana">
       <div class="mana-bar">
-        <div class="mana-fill" id="enemy-mana" style="width: 100%;"></div>
+        <div class="mana-fill" id="enemy-mana" style="width: 0%;"></div>
       </div>
-      <div class="mana-text" id="enemy-mana-text">MP: 50/100</div>
+      <div class="mana-text" id="enemy-mana-text">MP: 0/100</div>
     </div>
   </div>
 
@@ -720,11 +992,11 @@
     </div>
   </div>
 
-  <!-- Action Buttons -->
+  <!-- Action Buttons (GÜNCELLENENE MANA COSTLARI) -->
   <div class="action-area">
     <button class="action-btn attack" id="attack-btn" title="Attack">
       ⚔️
-      <div class="mana-cost">-10</div>
+      <div class="mana-gain">+1</div>
     </button>
     <button class="action-btn defend" id="defend-btn" title="Defend">
       🛡️
@@ -732,15 +1004,11 @@
     </button>
     <button class="action-btn special" id="skill-btn" title="Special Skill">
       ✨
-      <div class="mana-cost">-20</div>
-    </button>
-    <button class="action-btn mana" id="mana-btn" title="Restore Mana">
-      💫
-      <div class="mana-gain">+25</div>
+      <div class="mana-cost">-2</div>
     </button>
     <button class="action-btn ultimate" id="ultimate-btn" title="Ultimate Attack">
       🐲
-      <div class="mana-cost">-30</div>
+      <div class="mana-cost">-6</div>
     </button>
   </div>
 
@@ -769,21 +1037,18 @@
   let enemyKryptomonTeam = [];
   let turnTimer = null;
   let timeLeft = 30;
+  let matchCountdown = null;
+  let matchTimeLeft = 20;
+  let isYourTurn = false;
   
   // Contract Configuration
   const NFT_CONTRACT_ADDRESS = "0xdfdb045e4300d04ec32058756ec2453409360c5b";
   const BACKEND_URL = "https://pvpbackend.onrender.com";
-  
-  // Simple ERC721 ABI
-  const ERC721_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
-    "function tokenURI(uint256 tokenId) view returns (string)"
-  ];
 
   // DOM Elements
   const metamaskContainer = document.getElementById('metamask-container');
   const nftSelectionContainer = document.getElementById('nft-selection-container');
+  const waitingContainer = document.getElementById('waiting-container');
   const gameContainer = document.getElementById('game-container');
   const connectWalletBtn = document.getElementById('connect-wallet-btn');
   const connectionStatus = document.getElementById('connection-status');
@@ -794,6 +1059,8 @@
   const nftError = document.getElementById('nft-error');
   const selectedCountSpan = document.getElementById('count');
   const surrenderBtn = document.getElementById('surrender-btn');
+  const emojiBtn = document.getElementById('emoji-btn');
+  const emojiPanel = document.getElementById('emoji-panel');
 
   // Timer Functions
   function startTurnTimer() {
@@ -816,7 +1083,7 @@
       
       if (timeLeft <= 0) {
         clearInterval(turnTimer);
-        if (gameState && gameState.yourTurn && socket) {
+        if (isYourTurn && socket) {
           // Auto-skip turn
           socket.emit('playerMove', { move: 'skip' });
         }
@@ -836,34 +1103,42 @@
     document.getElementById('timer-display').textContent = `Time: ${timeLeft}s`;
   }
 
-  // NFT resim URL fonksiyonu - DÜZELTİLDİ
-  function getKryptomonImageURL(tokenId) {
-    // Spesifik token'lar için doğru URL'ler
-    const specialTokens = {
-      '978': '978.png',
-      '979': '979.png',
-      '980': '980.png',
-      '981': '981.png',
-      '982': '982.png',
-      '983': '983.png',
-      '984': '984.png',
-      '985': '985.png'
-    };
+  function startMatchCountdown() {
+    matchTimeLeft = 20;
+    document.getElementById('match-countdown').classList.remove('hidden');
+    document.getElementById('countdown-timer').textContent = matchTimeLeft;
     
-    if (specialTokens[tokenId]) {
-      return specialTokens[tokenId];
+    if (matchCountdown) {
+      clearInterval(matchCountdown);
     }
     
-    // Diğer tokenlar için tutarlı URL oluştur
-    const tokenNum = parseInt(tokenId);
-    const imageStyles = [
-      `https://api.dicebear.com/7.x/pixel-art/svg?seed=krypto${tokenId}&backgroundColor=ffcc5c,94d0cc,fd7f6f`,
-      `https://robohash.org/kryptomon${tokenId}?set=set4&size=300x300&bgset=bg1`,
-      `https://api.dicebear.com/7.x/bottts/svg?seed=monster${tokenId}&backgroundColor=ffcc5c,94d0cc,fd7f6f`
-    ];
+    matchCountdown = setInterval(() => {
+      matchTimeLeft--;
+      document.getElementById('countdown-timer').textContent = matchTimeLeft;
+      
+      if (matchTimeLeft <= 0) {
+        clearInterval(matchCountdown);
+        // Start the actual game
+        waitingContainer.classList.add('hidden');
+        gameContainer.style.display = 'block';
+      }
+    }, 1000);
+  }
+
+  function stopMatchCountdown() {
+    if (matchCountdown) {
+      clearInterval(matchCountdown);
+      matchCountdown = null;
+    }
+  }
+
+  // Kryptomon resim URL fonksiyonu - 20 PNG kullanımı
+  function getKryptomonImageURL(tokenId) {
+    const tokenNum = parseInt(tokenId) || 978;
     
-    const imageIndex = tokenNum % imageStyles.length;
-    return imageStyles[imageIndex];
+    // 1-20 arası PNG dosyaları kullan
+    const pngIndex = ((tokenNum - 978) % 20) + 1;
+    return `kryptomon${pngIndex}.png`;
   }
 
   // Stats calculation based on token ID
@@ -881,6 +1156,72 @@
       defense: Math.min(defense, 25),
       speed: Math.min(speed, 30)
     };
+  }
+
+  // Damage number animation
+  function showDamageNumber(damage, isCritical = false, isHeal = false, target = 'enemy') {
+    const damageDiv = document.createElement('div');
+    damageDiv.className = 'damage-number';
+    
+    if (isCritical) {
+      damageDiv.classList.add('critical');
+      damageDiv.textContent = `CRITICAL! ${damage}`;
+    } else if (isHeal) {
+      damageDiv.classList.add('heal');
+      damageDiv.textContent = `+${damage}`;
+    } else {
+      damageDiv.textContent = `-${damage}`;
+    }
+    
+    // Position based on target
+    const targetElement = target === 'enemy' ? 
+      document.getElementById('enemy-kryptomon') : 
+      document.getElementById('your-kryptomon');
+    
+    const rect = targetElement.getBoundingClientRect();
+    damageDiv.style.left = (rect.left + rect.width / 2 - 30) + 'px';
+    damageDiv.style.top = (rect.top + 50) + 'px';
+    damageDiv.style.position = 'fixed';
+    
+    document.body.appendChild(damageDiv);
+    
+    // Remove after animation
+    setTimeout(() => {
+      if (damageDiv.parentNode) {
+        damageDiv.parentNode.removeChild(damageDiv);
+      }
+    }, 2000);
+  }
+
+  // Emoji functions
+  function showEmojiAnimation(emoji, fromEnemy = false) {
+    const emojiDiv = document.createElement('div');
+    emojiDiv.className = 'emoji-animation';
+    emojiDiv.textContent = emoji;
+    
+    // Position based on sender
+    if (fromEnemy) {
+      emojiDiv.style.right = '400px';
+      emojiDiv.style.top = '200px';
+    } else {
+      emojiDiv.style.left = '400px';
+      emojiDiv.style.top = '200px';
+    }
+    
+    emojiDiv.style.position = 'fixed';
+    document.body.appendChild(emojiDiv);
+    
+    // Remove after animation
+    setTimeout(() => {
+      if (emojiDiv.parentNode) {
+        emojiDiv.parentNode.removeChild(emojiDiv);
+      }
+    }, 3000);
+  }
+
+  // Critical hit calculation
+  function calculateCriticalHit() {
+    return Math.random() < 0.15; // 15% critical hit chance
   }
 
   // MetaMask Connection
@@ -937,7 +1278,7 @@
       nftGrid.innerHTML = '';
       userNFTs = [];
       
-      // Demo Kryptomon oluştur (tutarlı resimlerle)
+      // Demo Kryptomon oluştur
       createDemoKryptomon();
       
     } catch (error) {
@@ -1024,8 +1365,8 @@
   function confirmKryptomonSelection() {
     if (selectedKryptomon.length === 3) {
       nftSelectionContainer.classList.add('hidden');
-      gameContainer.style.display = 'block';
-      initializeGame();
+      waitingContainer.classList.remove('hidden');
+      connectToGame();
     }
   }
 
@@ -1045,9 +1386,6 @@
     
     // Set active Kryptomon
     setActiveKryptomon(0);
-    
-    // Connect to backend
-    connectToGame();
   }
 
   function setActiveKryptomon(index) {
@@ -1086,7 +1424,7 @@
 
     socket.on('connect', () => {
       console.log('Connected to game server');
-      document.getElementById('status-message').textContent = '🔍 Looking for opponent...';
+      document.getElementById('waiting-status').textContent = 'Looking for opponent...';
       
       // Join game with Kryptomon team
       socket.emit('playerMove', {
@@ -1097,187 +1435,278 @@
     });
 
     socket.on('waitingForOpponent', () => {
-      document.getElementById('status-message').textContent = '⏳ Waiting for opponent...';
+      document.getElementById('waiting-status').textContent = 'Waiting for opponent...';
     });
 
     socket.on('gameStart', (data) => {
-      console.log('Game started:', data);
+      console.log('Game starting:', data);
+      
       gameState = data;
       enemyKryptomonTeam = data.enemyKryptomonTeam || [];
       
-      // Setup enemy Kryptomon team
-      for (let i = 0; i < 3; i++) {
-        const slot = document.getElementById(`enemy-slot-${i}`);
-        const img = slot.querySelector('img');
-        if (enemyKryptomonTeam[i]) {
-          img.src = enemyKryptomonTeam[i].image;
-          img.alt = enemyKryptomonTeam[i].name;
+      document.getElementById('waiting-status').textContent = 'Opponent found!';
+      
+      // Setup enemy team display
+      if (enemyKryptomonTeam.length > 0) {
+        for (let i = 0; i < 3; i++) {
+          const slot = document.getElementById(`enemy-slot-${i}`);
+          const img = slot.querySelector('img');
+          if (enemyKryptomonTeam[i]) {
+            img.src = enemyKryptomonTeam[i].image;
+            img.alt = enemyKryptomonTeam[i].name;
+          }
         }
+        setEnemyActiveKryptomon(0, enemyKryptomonTeam);
       }
       
-      setEnemyActiveKryptomon(0, enemyKryptomonTeam);
-      updateGameUI();
+      startMatchCountdown();
       
-      document.getElementById('status-message').style.display = 'none';
-      
-      if (data.yourTurn) {
-        startTurnTimer();
-        document.getElementById('turn-status').textContent = 'Your Turn';
-      } else {
-        stopTurnTimer();
-        document.getElementById('turn-status').textContent = 'Enemy Turn';
-      }
+      setTimeout(() => {
+        initializeGame();
+        updateGameUI(data);
+        
+        isYourTurn = data.yourTurn;
+        if (isYourTurn) {
+          startTurnTimer();
+        }
+        
+        document.getElementById('status-message').classList.add('hidden');
+      }, 20000);
     });
 
     socket.on('moveConfirmed', (data) => {
-      gameState = data;
-      updateGameUI();
-      playMoveAnimation();
+      console.log('Move confirmed:', data);
+      updateGameUI(data);
       
-      if (data.yourTurn) {
+      isYourTurn = data.yourTurn;
+      
+      if (isYourTurn) {
         startTurnTimer();
-        document.getElementById('turn-status').textContent = 'Your Turn';
       } else {
         stopTurnTimer();
-        document.getElementById('turn-status').textContent = 'Enemy Turn';
+      }
+      
+      // Show damage if it occurred
+      if (data.lastDamage) {
+        const isCritical = calculateCriticalHit();
+        showDamageNumber(data.lastDamage, isCritical, false, data.lastDamageTarget);
       }
     });
 
     socket.on('gameOver', (data) => {
+      console.log('Game over:', data);
       stopTurnTimer();
-      showGameOver(data.winner === 'player');
+      stopMatchCountdown();
+      
+      const gameOverDiv = document.getElementById('game-over');
+      const resultText = document.getElementById('game-result');
+      const messageText = document.getElementById('game-message');
+      
+      if (data.winner === 'player') {
+        gameOverDiv.className = 'game-over victory';
+        resultText.textContent = 'Victory!';
+        messageText.textContent = data.message || 'You have defeated your opponent!';
+      } else {
+        gameOverDiv.className = 'game-over defeat';
+        resultText.textContent = 'Defeat!';
+        messageText.textContent = data.message || 'Your opponent was stronger this time.';
+      }
+      
+      gameOverDiv.style.display = 'block';
     });
 
-    // Add action button listeners
-    document.getElementById('attack-btn').addEventListener('click', () => makeMove('attack'));
-    document.getElementById('defend-btn').addEventListener('click', () => makeMove('defend'));
-    document.getElementById('skill-btn').addEventListener('click', () => makeMove('skill'));
-    document.getElementById('mana-btn').addEventListener('click', () => makeMove('mana'));
-    document.getElementById('ultimate-btn').addEventListener('click', () => makeMove('ultimate'));
-
-    // Surrender button
-    surrenderBtn.addEventListener('click', () => {
-      if (confirm('Are you sure you want to surrender?')) {
-        socket.emit('playerMove', { move: 'surrender' });
+    socket.on('chatMessage', (data) => {
+      if (data.message && data.message.startsWith('emoji:')) {
+        const emoji = data.message.replace('emoji:', '');
+        showEmojiAnimation(emoji, data.fromIndex !== gameState.yourIndex);
       }
     });
 
-    // Kryptomon slot listeners
-    document.querySelectorAll('.kryptomon-slot').forEach((slot, index) => {
-      slot.addEventListener('click', () => {
-        if (gameState && gameState.yourTurn && index < 3) {
-          setActiveKryptomon(index);
-        }
-      });
+    socket.on('errorMessage', (message) => {
+      console.error('Server error:', message);
+      document.getElementById('status-message').textContent = `Error: ${message}`;
     });
 
-    // Game over button listeners
-    document.getElementById('play-again-btn').addEventListener('click', () => {
-      document.getElementById('game-over').style.display = 'none';
-      socket.emit('playerMove', { 
-        move: 'join',
-        walletAddress: currentAccount,
-        selectedKryptomon: selectedKryptomon
-      });
-    });
-
-    document.getElementById('back-menu-btn').addEventListener('click', () => {
-      location.reload();
+    socket.on('disconnect', () => {
+      console.log('Disconnected from server');
+      stopTurnTimer();
+      stopMatchCountdown();
     });
   }
 
-  function makeMove(moveType) {
-    if (socket && gameState && gameState.yourTurn) {
-      stopTurnTimer();
-      socket.emit('playerMove', {
-        move: moveType,
+  function updateGameUI(data) {
+    // Update health bars
+    const yourHealthPercent = (data.you.health / data.you.maxHealth) * 100;
+    const enemyHealthPercent = (data.enemy.health / data.enemy.maxHealth) * 100;
+    
+    document.getElementById('your-health').style.width = yourHealthPercent + '%';
+    document.getElementById('enemy-health').style.width = enemyHealthPercent + '%';
+    
+    document.getElementById('your-health-text').textContent = 
+      `HP: ${data.you.health}/${data.you.maxHealth}`;
+    document.getElementById('enemy-health-text').textContent = 
+      `HP: ${data.enemy.health}/${data.enemy.maxHealth}`;
+    
+    // Update mana bars (0 başlangıç)
+    const yourManaPercent = (data.you.mana / data.you.maxMana) * 100;
+    const enemyManaPercent = (data.enemy.mana / data.enemy.maxMana) * 100;
+    
+    document.getElementById('your-mana').style.width = yourManaPercent + '%';
+    document.getElementById('enemy-mana').style.width = enemyManaPercent + '%';
+    
+    document.getElementById('your-mana-text').textContent = 
+      `MP: ${data.you.mana}/${data.you.maxMana}`;
+    document.getElementById('enemy-mana-text').textContent = 
+      `MP: ${data.enemy.mana}/${data.enemy.maxMana}`;
+    
+    // Update turn status
+    document.getElementById('turn-status').textContent = 
+      data.yourTurn ? 'Your Turn' : 'Enemy Turn';
+    
+    // Update active Kryptomon displays
+    if (data.yourActiveKryptomon) {
+      document.getElementById('your-active-avatar').src = data.yourActiveKryptomon.image;
+    }
+    if (data.enemyActiveKryptomon) {
+      document.getElementById('enemy-active-avatar').src = data.enemyActiveKryptomon.image;
+    }
+    
+    // Enable/disable action buttons based on turn and mana
+    const isYourTurnNow = data.yourTurn;
+    const yourMana = data.you.mana;
+    
+    document.getElementById('attack-btn').disabled = !isYourTurnNow;
+    document.getElementById('defend-btn').disabled = !isYourTurnNow || yourMana < 5;
+    document.getElementById('skill-btn').disabled = !isYourTurnNow || yourMana < 2;
+    document.getElementById('ultimate-btn').disabled = !isYourTurnNow || yourMana < 6 || data.you.ultimateUsed;
+  }
+
+  // Action button handlers
+  function handleAttack() {
+    if (socket && isYourTurn) {
+      const attackAnimation = document.getElementById('your-kryptomon');
+      attackAnimation.classList.add('attacking');
+      
+      setTimeout(() => {
+        attackAnimation.classList.remove('attacking');
+      }, 600);
+      
+      socket.emit('playerMove', { 
+        move: 'attack',
         activeKryptomon: currentKryptomon
       });
     }
   }
 
-  function updateGameUI() {
-    if (!gameState) return;
-
-    // Update health bars
-    const yourHealthPercent = (gameState.you.health / gameState.you.maxHealth) * 100;
-    const enemyHealthPercent = (gameState.enemy.health / gameState.enemy.maxHealth) * 100;
-    
-    document.getElementById('your-health').style.width = yourHealthPercent + '%';
-    document.getElementById('enemy-health').style.width = enemyHealthPercent + '%';
-    
-    // Update mana bars
-    const yourManaPercent = (gameState.you.mana / 100) * 100;
-    const enemyManaPercent = (gameState.enemy.mana / 100) * 100;
-    
-    document.getElementById('your-mana').style.width = yourManaPercent + '%';
-    document.getElementById('enemy-mana').style.width = enemyManaPercent + '%';
-    
-    // Update text displays
-    document.getElementById('your-health-text').textContent = `HP: ${gameState.you.health}/${gameState.you.maxHealth}`;
-    document.getElementById('your-mana-text').textContent = `MP: ${gameState.you.mana}/100`;
-    document.getElementById('enemy-health-text').textContent = `HP: ${gameState.enemy.health}/${gameState.enemy.maxHealth}`;
-    document.getElementById('enemy-mana-text').textContent = `MP: ${gameState.enemy.mana}/100`;
-    
-    // Update action buttons
-    const disabled = !gameState.yourTurn;
-    document.getElementById('attack-btn').disabled = disabled || gameState.you.mana < 10;
-    document.getElementById('defend-btn').disabled = disabled || gameState.you.mana < 5;
-    document.getElementById('skill-btn').disabled = disabled || gameState.you.mana < 20;
-    document.getElementById('ultimate-btn').disabled = disabled || gameState.you.mana < 30 || gameState.you.ultimateUsed;
-    document.getElementById('mana-btn').disabled = disabled;
-  }
-
-  function playMoveAnimation() {
-    const yourKryptomon = document.getElementById('your-kryptomon');
-    const enemyKryptomon = document.getElementById('enemy-kryptomon');
-    
-    if (gameState.yourTurn) {
-      enemyKryptomon.classList.add('attacking');
-      setTimeout(() => enemyKryptomon.classList.remove('attacking'), 600);
-    } else {
-      yourKryptomon.classList.add('attacking');
-      setTimeout(() => yourKryptomon.classList.remove('attacking'), 600);
+  function handleDefend() {
+    if (socket && isYourTurn) {
+      socket.emit('playerMove', { 
+        move: 'defend',
+        activeKryptomon: currentKryptomon
+      });
     }
   }
 
-  function showGameOver(isVictory) {
-    const gameOverDiv = document.getElementById('game-over');
-    const gameResult = document.getElementById('game-result');
-    const gameMessage = document.getElementById('game-message');
-    
-    if (isVictory) {
-      gameOverDiv.className = 'game-over victory';
-      gameResult.textContent = '🎉 Victory!';
-      gameMessage.textContent = 'Your Kryptomon team has triumphed!';
-    } else {
-      gameOverDiv.className = 'game-over defeat';
-      gameResult.textContent = '💀 Defeat!';
-      gameMessage.textContent = 'Your team fought bravely but was defeated...';
+  function handleSkill() {
+    if (socket && isYourTurn) {
+      const attackAnimation = document.getElementById('your-kryptomon');
+      attackAnimation.classList.add('attacking');
+      
+      setTimeout(() => {
+        attackAnimation.classList.remove('attacking');
+      }, 600);
+      
+      socket.emit('playerMove', { 
+        move: 'skill',
+        activeKryptomon: currentKryptomon
+      });
     }
-    
-    gameOverDiv.style.display = 'block';
+  }
+
+  function handleUltimate() {
+    if (socket && isYourTurn) {
+      const ultimateAnimation = document.getElementById('your-kryptomon');
+      ultimateAnimation.classList.add('ultimate-attacking');
+      
+      setTimeout(() => {
+        ultimateAnimation.classList.remove('ultimate-attacking');
+      }, 1500);
+      
+      socket.emit('playerMove', { 
+        move: 'ultimate',
+        activeKryptomon: currentKryptomon
+      });
+    }
+  }
+
+  function handleSurrender() {
+    if (socket && confirm('Are you sure you want to surrender?')) {
+      socket.emit('playerMove', { move: 'surrender' });
+    }
+  }
+
+  function sendEmoji(emoji) {
+    if (socket) {
+      socket.emit('chatMessage', { message: `emoji:${emoji}` });
+      showEmojiAnimation(emoji, false);
+    }
+    emojiPanel.style.display = 'none';
   }
 
   // Event Listeners
-  connectWalletBtn.addEventListener('click', connectWallet);
-  selectNFTBtn.addEventListener('click', confirmKryptomonSelection);
-  refreshNFTsBtn.addEventListener('click', loadUserNFTs);
-
-  // Account change listener
-  if (window.ethereum) {
-    window.ethereum.on('accountsChanged', (accounts) => {
-      if (accounts.length === 0) {
-        location.reload();
-      } else if (accounts[0] !== currentAccount) {
-        location.reload();
+  document.addEventListener('DOMContentLoaded', () => {
+    checkMetaMask();
+    
+    connectWalletBtn.addEventListener('click', connectWallet);
+    selectNFTBtn.addEventListener('click', confirmKryptomonSelection);
+    refreshNFTsBtn.addEventListener('click', loadUserNFTs);
+    
+    document.getElementById('attack-btn').addEventListener('click', handleAttack);
+    document.getElementById('defend-btn').addEventListener('click', handleDefend);
+    document.getElementById('skill-btn').addEventListener('click', handleSkill);
+    document.getElementById('ultimate-btn').addEventListener('click', handleUltimate);
+    
+    surrenderBtn.addEventListener('click', handleSurrender);
+    
+    // Emoji button handlers
+    emojiBtn.addEventListener('click', () => {
+      emojiPanel.style.display = emojiPanel.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    document.querySelectorAll('.emoji-item').forEach(item => {
+      item.addEventListener('click', () => {
+        sendEmoji(item.dataset.emoji);
+      });
+    });
+    
+    // Close emoji panel when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!emojiBtn.contains(e.target) && !emojiPanel.contains(e.target)) {
+        emojiPanel.style.display = 'none';
       }
     });
-  }
-
-  // Initialize on page load
-  window.addEventListener('load', () => {
-    setTimeout(checkMetaMask, 1000);
+    
+    // Kryptomon switching
+    document.querySelectorAll('.kryptomon-selector .kryptomon-slot').forEach((slot, index) => {
+      slot.addEventListener('click', () => {
+        if (socket && isYourTurn) {
+          setActiveKryptomon(index);
+          socket.emit('playerMove', { 
+            move: 'switch',
+            activeKryptomon: index
+          });
+        }
+      });
+    });
+    
+    // Game over buttons
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+      location.reload();
+    });
+    
+    document.getElementById('back-menu-btn').addEventListener('click', () => {
+      location.reload();
+    });
   });
 </script>
 </body>
