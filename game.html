@@ -1270,13 +1270,15 @@
   <div class="control-panel">
     <button class="action-btn attack" onclick="performAction('attack')">Attack</button>
     <button class="action-btn defend" onclick="performAction('defend')">Defend</button>
-    <button class="action-btn skill" onclick="performAction('skill')">Skill (2 Mana)</button>
-    <button class="action-btn ultimate" onclick="performAction('ultimate')">Ultimate (6 Mana)</button>
+    <button class="action-btn skill" onclick="performAction('skill')">Skill (2)</button>
+    <button class="action-btn ultimate" onclick="performAction('ultimate')">Ultimate (6)</button>
   </div>
 </div>
 
+<!-- Socket.io ve JavaScript -->
+<script src="/socket.io/socket.io.js"></script>
 <script>
-// Global variables - SOCKET HATASı DÜZELTİLDİ
+// Global variables
 let socket = null;
 let playerName = '';
 let walletAddress = '';
@@ -1285,92 +1287,40 @@ let gameState = null;
 let yourTurn = false;
 let isGuestMode = false;
 let orientationLocked = false;
+let gameInitialized = false;
 
-// Initialize game after DOM is loaded - HATA DÜZELTİLDİ
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🎮 DOM loaded, initializing game...');
-  initializeGame();
+// Wait for socket.io to load
+window.addEventListener('load', function() {
+  console.log('🎮 Page loaded, checking Socket.io...');
+  
+  // Wait a bit for socket.io to be available
+  setTimeout(function() {
+    if (typeof io !== 'undefined') {
+      console.log('✅ Socket.io loaded successfully');
+      initializeGame();
+    } else {
+      console.log('❌ Socket.io not available, trying CDN...');
+      loadSocketIOFromCDN();
+    }
+  }, 100);
 });
 
-// Initialize game function - SOCKET HATASı DÜZELTİLDİ
-function initializeGame() {
-  try {
-    console.log('🎮 Initializing Kryptomon Battle Arena...');
-    
-    // Setup socket connection - SOCKET HATA DÜZELTMESİ
-    socket = io();
-    
-    socket.on('connect', () => {
-      console.log('✅ Connected to server:', socket.id);
-    });
-    
-    socket.on('disconnect', () => {
-      console.log('❌ Disconnected from server');
-    });
-    
-    socket.on('gameStart', (data) => {
-      console.log('🎮 Game started!', data);
-      gameState = data;
-      yourTurn = data.yourTurn;
-      
-      // Show game container
-      document.getElementById('waiting-container').style.display = 'none';
-      document.getElementById('game-container').style.display = 'block';
-      
-      // Update player names
-      document.getElementById('your-game-name').textContent = playerName;
-      document.getElementById('enemy-game-name').textContent = data.enemyPlayerName;
-      
-      // Update UI
-      updateGameUI(data);
-      enterGameFullscreen();
-    });
-    
-    socket.on('moveConfirmed', (data) => {
-      console.log('Move confirmed:', data);
-      gameState = data;
-      yourTurn = data.yourTurn;
-      updateGameUI(data);
-      
-      // Show damage numbers - HASAR NUMARASI DÜZELTİLDİ
-      if (data.moveResult && data.moveResult.damage > 0) {
-        showDamageNumber(data.moveResult.damage, data.moveResult.target, data.moveResult.isCritical);
-      }
-    });
-    
-    socket.on('gameOver', (data) => {
-      console.log('Game over:', data);
-      alert(data.message);
-      location.reload();
-    });
-    
-    socket.on('waitingForOpponent', () => {
-      console.log('Waiting for opponent...');
-      showWaitingScreen();
-    });
-    
-    socket.on('emojiReceived', (data) => {
-      showEmojiAnimation(data.emoji);
-    });
-    
-    socket.on('errorMessage', (message) => {
-      console.error('Error:', message);
-      alert(`Error: ${message}`);
-    });
-    
-    // Setup orientation and touch
-    handleOrientationChange();
-    setupTouchOptimizations();
-    
-    console.log('✅ Game initialization complete!');
-    
-  } catch (error) {
-    console.error('❌ Game initialization failed:', error);
-    alert('Failed to initialize game. Please refresh the page.');
-  }
+// Fallback CDN loader
+function loadSocketIOFromCDN() {
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js';
+  script.onload = function() {
+    console.log('✅ Socket.io loaded from CDN');
+    initializeGame();
+  };
+  script.onerror = function() {
+    console.error('❌ Failed to load Socket.io from CDN');
+    alert('Unable to connect to game server. Please refresh the page.');
+  };
+  document.head.appendChild(script);
 }
 
-// Mobile orientation detection ve auto-rotation
+// Mobile orientation detection
 function handleOrientationChange() {
   const isPortrait = window.innerHeight > window.innerWidth;
   const isMobile = window.innerWidth <= 768;
@@ -1431,6 +1381,87 @@ function enterGameFullscreen() {
     setTimeout(() => {
       requestFullscreen();
     }, 1000);
+  }
+}
+
+// Initialize game after socket.io is loaded
+function initializeGame() {
+  if (gameInitialized) return;
+  gameInitialized = true;
+  
+  try {
+    console.log('🎮 Initializing Kryptomon Battle Arena...');
+    
+    // Setup socket connection
+    socket = io();
+    
+    socket.on('connect', () => {
+      console.log('✅ Connected to server:', socket.id);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('❌ Disconnected from server');
+    });
+    
+    socket.on('gameStart', (data) => {
+      console.log('🎮 Game started!', data);
+      gameState = data;
+      yourTurn = data.yourTurn;
+      
+      // Show game container
+      document.getElementById('waiting-container').style.display = 'none';
+      document.getElementById('game-container').style.display = 'block';
+      
+      // Update player names
+      document.getElementById('your-game-name').textContent = playerName;
+      document.getElementById('enemy-game-name').textContent = data.enemyPlayerName;
+      
+      // Update UI
+      updateGameUI(data);
+      enterGameFullscreen();
+    });
+    
+    socket.on('moveConfirmed', (data) => {
+      console.log('Move confirmed:', data);
+      gameState = data;
+      yourTurn = data.yourTurn;
+      updateGameUI(data);
+      
+      // Show damage numbers
+      if (data.moveResult && data.moveResult.damage > 0) {
+        showDamageNumber(data.moveResult.damage, data.moveResult.target, data.moveResult.isCritical);
+      }
+    });
+    
+    socket.on('gameOver', (data) => {
+      console.log('Game over:', data);
+      alert(data.message);
+      location.reload();
+    });
+    
+    socket.on('waitingForOpponent', () => {
+      console.log('Waiting for opponent...');
+      showWaitingScreen();
+    });
+    
+    socket.on('emojiReceived', (data) => {
+      showEmojiAnimation(data.emoji);
+    });
+    
+    socket.on('errorMessage', (message) => {
+      console.error('Error:', message);
+      alert(`Error: ${message}`);
+    });
+    
+    // Setup orientation and touch
+    handleOrientationChange();
+    setupTouchOptimizations();
+    
+    console.log('✅ Game initialization complete!');
+    
+  } catch (error) {
+    console.error('❌ Game initialization failed:', error);
+    alert('Failed to initialize game. Please refresh the page.');
   }
 }
 
@@ -1558,6 +1589,12 @@ function confirmSelection() {
 
 // Game functions
 function joinGame() {
+  if (!socket) {
+    console.error('Socket not initialized!');
+    alert('Connection not ready. Please wait a moment and try again.');
+    return;
+  }
+  
   console.log('Joining game with:', { playerName, selectedKryptomon: selectedKryptomon.length });
   
   socket.emit('playerMove', {
@@ -1696,6 +1733,11 @@ function updateShieldEffects(data) {
 
 // Combat functions
 function performAction(action) {
+  if (!socket) {
+    alert('Connection not ready!');
+    return;
+  }
+  
   if (!yourTurn) {
     alert('Not your turn!');
     return;
@@ -1711,6 +1753,11 @@ function performAction(action) {
 }
 
 function switchKryptomon(index) {
+  if (!socket) {
+    alert('Connection not ready!');
+    return;
+  }
+  
   if (!yourTurn) {
     alert('Can only switch on your turn!');
     return;
@@ -1733,6 +1780,11 @@ function switchKryptomon(index) {
 }
 
 function surrender() {
+  if (!socket) {
+    alert('Connection not ready!');
+    return;
+  }
+  
   if (confirm('Are you sure you want to surrender?')) {
     socket.emit('playerMove', {
       move: 'surrender',
@@ -1742,13 +1794,13 @@ function surrender() {
   }
 }
 
-// Damage number display - HASAR NUMARASI DÜZELTİLDİ
+// Damage number display
 function showDamageNumber(damage, target, isCritical = false) {
   const damageDiv = document.createElement('div');
   damageDiv.className = `damage-number ${isCritical ? 'critical' : ''}`;
   damageDiv.textContent = isCritical ? `${damage} CRIT!` : damage;
   
-  // Position based on target - HASAR NUMARASI DÜZELTİLDİ
+  // Position based on target
   const targetKryptomon = target === 'enemy' ? 
     document.getElementById('enemy-kryptomon') : 
     document.getElementById('your-kryptomon');
@@ -1775,6 +1827,8 @@ function toggleEmojiPanel() {
 }
 
 function sendEmoji(emoji) {
+  if (!socket) return;
+  
   socket.emit('sendEmoji', { emoji: emoji });
   document.getElementById('emoji-panel').style.display = 'none';
 }
@@ -1803,9 +1857,14 @@ window.addEventListener('orientationchange', () => {
 window.addEventListener('resize', handleOrientationChange);
 
 // Enter key support for player name
-document.getElementById('player-name-input').addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') {
-    setPlayerName();
+document.addEventListener('DOMContentLoaded', () => {
+  const nameInput = document.getElementById('player-name-input');
+  if (nameInput) {
+    nameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        setPlayerName();
+      }
+    });
   }
 });
 </script>
