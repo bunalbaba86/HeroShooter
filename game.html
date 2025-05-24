@@ -797,51 +797,48 @@
     font-weight: bold;
   }
 
-  /* Kryptomon Team Selectors */
-  .kryptomon-selector {
-    position: absolute;
-    display: flex;
-    gap: 10px;
-    z-index: 80;
-  }
-
-  .kryptomon-selector.yours {
-    bottom: 30px;
-    left: 30px;
-  }
-
-  .kryptomon-selector.enemy {
-    bottom: 30px;
-    right: 30px;
-  }
-
-  .kryptomon-slot {
-    width: 70px;
-    height: 70px;
-    border: 3px solid rgba(255,255,255,0.3);
-    border-radius: 50%;
-    overflow: hidden;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    background: rgba(0,0,0,0.5);
-  }
-
-  .kryptomon-slot.active {
-    border-color: #FFD700;
-    box-shadow: 0 0 20px rgba(255,215,0,0.6);
-    transform: scale(1.1);
-  }
-
-  .kryptomon-slot:hover:not(.active) {
-    border-color: #3498db;
-    transform: scale(1.05);
-  }
-
-  .kryptomon-slot img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
+ /* Kryptomon Team Selectors (POZİSYON DÜZELTİLDİ) */
+.kryptomon-selector {
+  position: absolute;
+  display: flex;
+  flex-direction: column; /* Dikey sıralama */
+  gap: 15px;
+  z-index: 80;
+}
+.kryptomon-selector.yours {
+  top: 50%; /* Ekranın ortası */
+  left: 20px; /* En sol */
+  transform: translateY(-50%);
+}
+.kryptomon-selector.enemy {
+  top: 50%; /* Ekranın ortası */
+  right: 20px; /* En sağ */
+  transform: translateY(-50%);
+}
+.kryptomon-slot {
+  width: 70px;
+  height: 70px;
+  border: 3px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(0,0,0,0.5);
+}
+.kryptomon-slot.active {
+  border-color: #FFD700;
+  box-shadow: 0 0 20px rgba(255,215,0,0.6);
+  transform: scale(1.1);
+}
+.kryptomon-slot:hover:not(.active) {
+  border-color: #3498db;
+  transform: scale(1.05);
+}
+.kryptomon-slot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
   /* Game Over Screen */
   #game-over {
@@ -1245,13 +1242,19 @@
   let playerName = '';
   let enemyPlayerName = '';
   let isGuestMode = false;
-  let hasUsedSwitch = false; // YENİ - Tur başına 1 değiştirme
-  let defenseCooldown = 0; // YENİ - Savunma cooldown
-  let defenseEffectTurns = 0; // YENİ - Savunma etkisi
+  let hasSwitchedThisTurn = false; // YENİ - Tur başı bir kez değişim kontrolü
+  let defenseCooldown = 0; // YENİ - Defans cooldown
+  let defenseEffect = 0; // YENİ - Defans etkisi kalan tur sayısı
   
   // Contract Configuration
   const NFT_CONTRACT_ADDRESS = "0xdfdb045e4300d04ec32058756ec2453409360c5b";
   const BACKEND_URL = "https://pvpbackend.onrender.com";
+
+  // Audio elements (YENİ)
+  const attackSound = new Audio('bite.mp3');
+  const skillSound = new Audio('skill.mp3');
+  const ultimateSound = new Audio('ultimate.mp3');
+  const defenseSound = new Audio('defense.mp3');
 
   // DOM Elements
   const playerNameContainer = document.getElementById('player-name-container');
@@ -1274,23 +1277,6 @@
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiPanel = document.getElementById('emoji-panel');
 
-  // Audio Elements (YENİ)
-  const biteSound = document.getElementById('bite-sound');
-  const skillSound = document.getElementById('skill-sound');
-  const ultimateSound = document.getElementById('ultimate-sound');
-  const defenceSound = document.getElementById('defence-sound');
-
-  // Play Sound Function (YENİ)
-  function playSound(soundElement) {
-    try {
-      soundElement.currentTime = 0;
-      soundElement.volume = 0.3;
-      soundElement.play().catch(e => console.log('Audio play failed:', e));
-    } catch (error) {
-      console.log('Audio error:', error);
-    }
-  }
-
   // Player name validation and setting
   function validatePlayerName() {
     const name = playerNameInput.value.trim();
@@ -1304,9 +1290,11 @@
       playerName = playerNameInput.value.trim();
       console.log('Player name set:', playerName);
       
+      // Update displays
       document.getElementById('your-name-display').textContent = playerName;
       document.getElementById('your-game-name').textContent = playerName;
       
+      // Hide name selection, show MetaMask connection
       playerNameContainer.classList.add('hidden');
       metamaskContainer.classList.remove('hidden');
       
@@ -1346,6 +1334,16 @@
       defense: Math.min(defense, 25),
       speed: Math.min(speed, 30)
     };
+  }
+
+  // Play sound function (YENİ)
+  function playSound(audio) {
+    try {
+      audio.currentTime = 0;
+      audio.play().catch(e => console.log('Audio play failed:', e));
+    } catch (e) {
+      console.log('Audio error:', e);
+    }
   }
 
   // Surrender function
@@ -1402,6 +1400,17 @@
     }, 3000);
   }
 
+  // Shield effect (YENİ)
+  function showShieldEffect(side) {
+    const shieldId = side === 'yours' ? 'your-shield' : 'enemy-shield';
+    const shield = document.getElementById(shieldId);
+    
+    shield.classList.remove('hidden');
+    setTimeout(() => {
+      shield.classList.add('hidden');
+    }, 1000);
+  }
+
   // Damage number display function
   function showDamageNumber(damage, isCritical = false, target = 'enemy') {
     console.log('Showing damage number:', damage, isCritical, target);
@@ -1432,23 +1441,13 @@
     }, 2500);
   }
 
-  // Shield Effect Function (YENİ)
-  function showShieldEffect(target = 'yours') {
-    const shield = document.getElementById(target === 'yours' ? 'your-shield' : 'enemy-shield');
-    shield.classList.remove('hidden');
-    
-    setTimeout(() => {
-      shield.classList.add('hidden');
-    }, 1000);
-  }
-
   // Timer Functions
   function startTurnTimer(isMyTurn = false) {
     timeLeft = 30;
     isYourTurn = isMyTurn;
-    hasUsedSwitch = false; // Reset switch usage per turn
+    hasSwitchedThisTurn = false; // YENİ - Her tur başında sıfırla
     updateTimerDisplay(isMyTurn);
-    updateCooldowns(); // Update cooldown displays
+    updateCooldowns(); // YENİ - Cooldown güncellemesi
     
     if (turnTimer) {
       clearInterval(turnTimer);
@@ -1486,26 +1485,22 @@
     document.getElementById('timer-display').textContent = `Time: ${timeLeft}s`;
   }
 
-  // Cooldown Functions (YENİ)
+  // Cooldown functions (YENİ)
   function updateCooldowns() {
-    const defendBtn = document.getElementById('defend-btn');
-    
     if (defenseCooldown > 0) {
-      defendBtn.classList.add('cooldown');
-      defendBtn.setAttribute('data-cooldown', defenseCooldown);
-      defendBtn.disabled = true;
       defenseCooldown--;
-    } else {
-      defendBtn.classList.remove('cooldown');
-      defendBtn.removeAttribute('data-cooldown');
-      if (isYourTurn) {
-        defendBtn.disabled = false;
+      const defendBtn = document.getElementById('defend-btn');
+      if (defenseCooldown > 0) {
+        defendBtn.classList.add('cooldown');
+        defendBtn.setAttribute('data-cooldown', defenseCooldown);
+      } else {
+        defendBtn.classList.remove('cooldown');
+        defendBtn.removeAttribute('data-cooldown');
       }
     }
-
-    // Update defense effect display
-    if (defenseEffectTurns > 0) {
-      defenseEffectTurns--;
+    
+    if (defenseEffect > 0) {
+      defenseEffect--;
     }
   }
 
@@ -1515,6 +1510,7 @@
     document.getElementById('countdown-timer').textContent = matchTimeLeft;
     document.getElementById('waiting-status').textContent = `Opponent found: ${enemyPlayerName}!`;
     
+    // Show enemy info
     document.getElementById('enemy-name-display').textContent = enemyPlayerName;
     document.getElementById('opponent-avatar').textContent = '🛡️';
     
@@ -1550,7 +1546,6 @@
       connectionStatus.textContent = 'MetaMask not detected. Please install MetaMask or continue as guest.';
       connectWalletBtn.textContent = 'Install MetaMask';
       connectWalletBtn.onclick = () => window.open('https://metamask.io/', '_blank');
-      
       guestModeBtn.style.display = 'block';
     }
   }
@@ -1578,7 +1573,6 @@
       connectionStatus.textContent = 'Connection failed. Please try again or continue as guest.';
       connectWalletBtn.disabled = false;
       connectWalletBtn.textContent = 'Connect MetaMask';
-      
       guestModeBtn.style.display = 'block';
     }
   }
@@ -1770,6 +1764,7 @@
       
       console.log('Enemy player name:', enemyPlayerName);
       
+      // Update enemy name displays
       document.getElementById('enemy-game-name').textContent = enemyPlayerName;
       
       enemyKryptomonTeam = data.enemyKryptomonTeam;
@@ -1864,9 +1859,16 @@
     document.getElementById('defend-btn').disabled = !isYourTurn || defenseCooldown > 0;
     document.getElementById('skill-btn').disabled = !isYourTurn || data.you.mana < 2;
     document.getElementById('ultimate-btn').disabled = !isYourTurn || data.you.mana < 6;
+    
+    // Update Kryptomon switching availability (YENİ)
+    document.querySelectorAll('.kryptomon-slot').forEach((slot, index) => {
+      if (slot.id.startsWith('slot-')) {
+        slot.style.pointerEvents = (isYourTurn && !hasSwitchedThisTurn) ? 'auto' : 'none';
+        slot.style.opacity = (isYourTurn && !hasSwitchedThisTurn) ? '1' : '0.5';
+      }
+    });
   }
 
-  // Performance Action (GELİŞTİRİLDİ)
   function performAction(action) {
     if (!socket || !isYourTurn) return;
     
@@ -1874,49 +1876,49 @@
     
     const yourKryptomon = document.getElementById('your-kryptomon');
     
-    // Play sounds and animations
+    // Play sounds and animations (GELİŞTİRİLDİ)
     if (action === 'attack') {
-      playSound(biteSound);
       yourKryptomon.classList.add('attacking');
+      playSound(attackSound);
       setTimeout(() => yourKryptomon.classList.remove('attacking'), 1200);
     } else if (action === 'skill') {
-      playSound(skillSound);
       yourKryptomon.classList.add('skill-attacking');
+      playSound(skillSound);
       setTimeout(() => yourKryptomon.classList.remove('skill-attacking'), 1000);
     } else if (action === 'ultimate') {
-      playSound(ultimateSound);
       yourKryptomon.classList.add('ultimate-attacking');
+      playSound(ultimateSound);
       setTimeout(() => yourKryptomon.classList.remove('ultimate-attacking'), 1500);
     } else if (action === 'defend') {
-      playSound(defenceSound);
       yourKryptomon.classList.add('defending');
+      playSound(defenseSound);
       showShieldEffect('yours');
-      defenseCooldown = 4; // 4 turn cooldown
-      defenseEffectTurns = 2; // 2 turn effect
+      defenseCooldown = 4; // 4 tur cooldown
+      defenseEffect = 2; // 2 tur koruma
       setTimeout(() => yourKryptomon.classList.remove('defending'), 1000);
     }
     
     socket.emit('playerMove', { move: action });
   }
 
-  // Switch Kryptomon (GELİŞTİRİLDİ)
   function switchKryptomon(index) {
-    if (!socket || !isYourTurn || hasUsedSwitch) {
-      if (hasUsedSwitch) {
-        console.log('Already switched this turn!');
-      }
-      return;
-    }
+    if (!socket || !isYourTurn || hasSwitchedThisTurn) return;
     
     console.log('Switching to Kryptomon:', index);
-    hasUsedSwitch = true; // Mark as used this turn
     
+    hasSwitchedThisTurn = true; // YENİ - Bu turda değişim yapıldı
+    
+    // Sıra kaybetme yok, sadece değişim (YENİ)
     socket.emit('playerMove', { 
       move: 'switch', 
-      activeKryptomon: index 
+      activeKryptomon: index,
+      noTurnChange: true // YENİ - Sıra değişmesin
     });
     
     setActiveKryptomon(index);
+    
+    // UI güncelle
+    updateGameUI(gameState);
   }
 
   function showGameOver(winner, message) {
@@ -1935,7 +1937,7 @@
     }
     
     resultMessage.textContent = message;
-    gameOverDiv.style.display = 'flex';
+    gameOverDiv.style.display = 'block';
   }
 
   function playAgain() {
