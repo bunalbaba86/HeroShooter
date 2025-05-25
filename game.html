@@ -1289,20 +1289,156 @@ let isGuestMode = false;
 let orientationLocked = false;
 let gameInitialized = false;
 
-// Wait for socket.io to load
-window.addEventListener('load', function() {
-  console.log('🎮 Page loaded, checking Socket.io...');
+// Socket.io connection - Render backend için
+let socket;
+
+function initializeSocket() {
+  console.log('🎮 Initializing Socket.io connection...');
   
-  // Wait a bit for socket.io to be available
-  setTimeout(function() {
-    if (typeof io !== 'undefined') {
-      console.log('✅ Socket.io loaded successfully');
-      initializeGame();
-    } else {
-      console.log('❌ Socket.io not available, trying CDN...');
-      loadSocketIOFromCDN();
-    }
-  }, 100);
+  const socketUrl = 'https://pvpbackend.onrender.com';
+  
+  console.log('🔗 Connecting to:', socketUrl);
+  
+  try {
+    socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      upgrade: true,
+      rememberUpgrade: true,
+      timeout: 20000,
+      forceNew: false,
+      autoConnect: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      maxReconnectionAttempts: 5
+    });
+
+    socket.on('connect', () => {
+      console.log('✅ Connected to server:', socket.id);
+      connectionStatus.textContent = 'Connected';
+      connectionStatus.className = 'connection-status connected';
+    });
+
+    socket.on('disconnect', (reason) => {
+      console.log('❌ Disconnected:', reason);
+      connectionStatus.textContent = 'Disconnected';
+      connectionStatus.className = 'connection-status disconnected';
+      
+      // Auto-reconnect attempt after 3 seconds
+      setTimeout(() => {
+        if (!socket.connected) {
+          console.log('🔄 Attempting to reconnect...');
+          socket.connect();
+        }
+      }, 3000);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error);
+      connectionStatus.textContent = 'Connection Error';
+      connectionStatus.className = 'connection-status error';
+    });
+
+    socket.on('reconnect', (attemptNumber) => {
+      console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+      connectionStatus.textContent = 'Connected';
+      connectionStatus.className = 'connection-status connected';
+    });
+
+    socket.on('reconnect_error', (error) => {
+      console.error('🔄 Reconnection failed:', error);
+    });
+
+    socket.on('reconnect_failed', () => {
+      console.error('❌ Reconnection failed permanently');
+      connectionStatus.textContent = 'Connection Failed';
+      connectionStatus.className = 'connection-status error';
+    });
+
+    // Game event listeners
+    setupSocketListeners();
+    
+  } catch (error) {
+    console.error('❌ Socket initialization error:', error);
+    connectionStatus.textContent = 'Initialization Error';
+    connectionStatus.className = 'connection-status error';
+  }
+}
+
+function setupSocketListeners() {
+  socket.on('waitingForOpponent', () => {
+    console.log('⏳ Waiting for opponent...');
+    showWaitingScreen();
+  });
+
+  socket.on('gameStart', (gameData) => {
+    console.log('🎮 Game starting!', gameData);
+    handleGameStart(gameData);
+  });
+
+  socket.on('gameUpdate', (updateData) => {
+    console.log('🔄 Game update received:', updateData);
+    handleGameUpdate(updateData);
+  });
+
+  socket.on('gameEnd', (endData) => {
+    console.log('🏁 Game ended:', endData);
+    handleGameEnd(endData);
+  });
+
+  socket.on('emojiReceived', (emojiData) => {
+    console.log('😊 Emoji received:', emojiData);
+    showEmojiAnimation(emojiData.emoji, emojiData.sender);
+  });
+
+  socket.on('opponentDisconnected', () => {
+    console.log('👤 Opponent disconnected');
+    alert('Your opponent has disconnected. Returning to main menu.');
+    resetToMainMenu();
+  });
+
+  socket.on('error', (errorData) => {
+    console.error('❌ Server error:', errorData);
+    alert('Server error: ' + errorData.message);
+  });
+}
+
+// Connection status indicator ekleyin
+const connectionStatus = document.createElement('div');
+connectionStatus.id = 'connection-status';
+connectionStatus.className = 'connection-status disconnected';
+connectionStatus.textContent = 'Connecting...';
+connectionStatus.style.cssText = `
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 9999;
+  transition: all 0.3s ease;
+`;
+
+// CSS for connection status
+const statusStyles = document.createElement('style');
+statusStyles.textContent = `
+  .connection-status.connected {
+    background: #2ecc71;
+    color: white;
+  }
+  .connection-status.disconnected {
+    background: #e74c3c;
+    color: white;
+  }
+  .connection-status.error {
+    background: #f39c12;
+    color: white;
+  }
+`;
+
+document.head.appendChild(statusStyles);
+document.body.appendChild(connectionStatus);
 });
 
 // Fallback CDN loader
@@ -1866,6 +2002,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+});
+ // Page load event
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎮 Page loaded, initializing Socket.io...');
+  console.log('🌐 Target backend: https://pvpbackend.onrender.com');
+  initializeSocket();
 });
 </script>
 
