@@ -78,34 +78,6 @@
     color: white;
   }
 
-  /* Screen Rotation Prompt */
-  .rotation-prompt {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.95);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    flex-direction: column;
-    color: white;
-    text-align: center;
-  }
-
-  .rotation-icon {
-    font-size: 80px;
-    margin-bottom: 20px;
-    animation: rotatePhone 2s infinite ease-in-out;
-  }
-
-  @keyframes rotatePhone {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(90deg); }
-  }
-
   /* Player Name Selection Screen */
   #player-name-container {
     position: fixed;
@@ -585,7 +557,7 @@
     margin-right: 5px;
   }
 
-  /* Kryptomon Team Selection - Positioned on left for both sides */
+  /* Kryptomon Team Selection - DÜZELTME: Sol orta ve sağ orta */
   .kryptomon-team {
     position: absolute;
     top: 50%;
@@ -597,12 +569,11 @@
   }
 
   .kryptomon-team.left {
-    left: 20px;
+    left: 50px; /* Sol orta */
   }
 
   .kryptomon-team.right {
-    left: 20px; /* Both teams on left side */
-    margin-top: 200px; /* Offset enemy team below player team */
+    right: 50px; /* Sağ orta */
   }
 
   .kryptomon-slot {
@@ -683,6 +654,11 @@
     filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
   }
 
+  /* DÜZELTME: Rakip Kryptomon'u ters çevir */
+  .trainer.right .kryptomon-sprite {
+    transform: scaleX(-1); /* Sağdaki Kryptomon'u ters çevir */
+  }
+
   .kryptomon-sprite.shake {
     animation: shake 0.5s ease-in-out;
   }
@@ -699,6 +675,17 @@
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-10px); }
     75% { transform: translateX(10px); }
+  }
+
+  /* Rakip için shake animasyonunu da ters çevir */
+  .trainer.right .kryptomon-sprite.shake {
+    animation: shakeRight 0.5s ease-in-out;
+  }
+
+  @keyframes shakeRight {
+    0%, 100% { transform: scaleX(-1) translateX(0); }
+    25% { transform: scaleX(-1) translateX(-10px); }
+    75% { transform: scaleX(-1) translateX(10px); }
   }
 
   /* Game Controls */
@@ -1290,13 +1277,12 @@ function initializeSocket() {
     currentGameId = data.gameId;
     gameState = data.gameState;
     
-    // Kritik: Oyun başladığında önce tüm ekranları gizle, sonra oyun ekranını göster
+    // DÜZELTME: Oyun başladığında tüm ekranları gizle ve oyun ekranını göster
     hideAllScreens();
-    setTimeout(() => {
-      showGameScreen();
-      initializeGameUI();
-      updateGameState();
-    }, 100);
+    showGameScreen();
+    
+    initializeGameUI();
+    updateGameState();
   });
 
   socket.on('gameUpdate', (data) => {
@@ -1331,33 +1317,29 @@ function initializeSocket() {
   });
 }
 
-// Ekran yönetim fonksiyonları - DÜZELTİLDİ
+// Ekran yönetim fonksiyonları - DÜZELTME
 function hideAllScreens() {
-  console.log('🔄 Hiding all screens...');
   playerNameContainer.style.display = 'none';
   metamaskContainer.style.display = 'none';
   nftSelectionContainer.style.display = 'none';
   waitingContainer.style.display = 'none';
   gameContainer.style.display = 'none';
+  console.log('🔧 All screens hidden');
 }
 
 function showGameScreen() {
-  console.log('🎮 Showing game screen...');
   hideAllScreens();
   gameContainer.style.display = 'block';
-  // Force reflow
-  gameContainer.offsetHeight;
-  console.log('✅ Game screen is now visible');
+  console.log('🎮 Game screen shown');
 }
 
 function showWaitingScreen() {
-  console.log('⏳ Showing waiting screen...');
   hideAllScreens();
   waitingContainer.style.display = 'flex';
+  console.log('⏳ Waiting screen shown');
 }
 
 function resetToMainScreen() {
-  console.log('🔄 Resetting to main screen...');
   hideAllScreens();
   playerNameContainer.style.display = 'flex';
   
@@ -1371,6 +1353,7 @@ function resetToMainScreen() {
     clearInterval(turnTimer);
     turnTimer = null;
   }
+  console.log('🔄 Reset to main screen');
 }
 
 // Connection status
@@ -1650,14 +1633,14 @@ function updateMainKryptomonSprites() {
   }
 }
 
-// Game state update
+// Game state update - DÜZELTME: Turn sistemi
 function updateGameState() {
   if (!gameState) return;
   
   const playerData = gameState.gameData[playerIndex];
   const enemyData = gameState.gameData[1 - playerIndex];
   
-  // Update turn info
+  // DÜZELTME: Turn kontrolü
   isMyTurn = gameState.currentTurn === playerIndex;
   document.getElementById('current-turn').textContent = gameState.turnCount;
   
@@ -1675,6 +1658,10 @@ function updateGameState() {
       <div>Opponent's Turn</div>
       <div class="turn-timer">⏱️ <span id="turn-timer">30</span>s</div>
     `;
+    if (turnTimer) {
+      clearInterval(turnTimer);
+      turnTimer = null;
+    }
   }
   
   // Update HP bars
@@ -1690,6 +1677,8 @@ function updateGameState() {
   
   // Update Kryptomon teams
   updateKryptomonTeams();
+  
+  console.log('🔄 Game state updated. Is my turn:', isMyTurn, 'Current turn:', gameState.currentTurn, 'Player index:', playerIndex);
 }
 
 function updateHPBar(player, health, maxHealth) {
@@ -1729,6 +1718,8 @@ function updateControlButtons(playerData) {
   } else {
     defendBtn.textContent = '🛡️ Defend';
   }
+  
+  console.log('🎮 Control buttons updated. Can act:', canAct, 'Attack disabled:', attackBtn.disabled);
 }
 
 // Game controls setup
@@ -1755,7 +1746,10 @@ function setupGameControls() {
 }
 
 function makeMove(move, activeKryptomon = null) {
-  if (!isMyTurn || !gameState.gameActive) return;
+  if (!isMyTurn || !gameState.gameActive) {
+    console.log('❌ Cannot make move - not my turn or game not active');
+    return;
+  }
   
   console.log('🎯 Making move:', move, activeKryptomon);
   
@@ -1781,10 +1775,13 @@ function startTurnTimer() {
   
   turnTimer = setInterval(() => {
     timeLeft--;
-    timerElement.textContent = timeLeft;
+    if (timerElement) {
+      timerElement.textContent = timeLeft;
+    }
     
     if (timeLeft <= 0) {
       clearInterval(turnTimer);
+      turnTimer = null;
       if (isMyTurn) {
         socket.emit('turnTimeout');
       }
@@ -1812,101 +1809,118 @@ function handleMoveResult(moveResult) {
     playSound('switch');
   }
   
-  if (moveResult.kryptomonDied) {
-    console.log('💀 Kryptomon died!');
-  }
-  
   if (moveResult.autoSwitched) {
-    console.log('🔄 Auto-switched to new Kryptomon');
     playSound('switch');
   }
 }
 
-// Damage text animation
+// Visual effects
 function showDamageText(damage, isCritical, targetIndex) {
-  const target = targetIndex === playerIndex ? 'player' : 'enemy';
-  const sprite = document.getElementById(`${target}-kryptomon`);
+  const targetSprite = targetIndex === playerIndex ? 
+    document.getElementById('player-kryptomon') : 
+    document.getElementById('enemy-kryptomon');
   
-  const damageText = document.createElement('div');
-  damageText.className = `damage-text ${isCritical ? 'critical' : ''}`;
-  damageText.textContent = `-${damage}`;
+  if (!targetSprite) return;
   
-  const rect = sprite.getBoundingClientRect();
-  damageText.style.left = `${rect.left + rect.width / 2}px`;
-  damageText.style.top = `${rect.top + rect.height / 2}px`;
+  const damageEl = document.createElement('div');
+  damageEl.className = `damage-text ${isCritical ? 'critical' : ''}`;
+  damageEl.textContent = `-${damage}`;
   
-  document.body.appendChild(damageText);
+  const rect = targetSprite.getBoundingClientRect();
+  damageEl.style.left = `${rect.left + rect.width / 2}px`;
+  damageEl.style.top = `${rect.top}px`;
+  
+  document.body.appendChild(damageEl);
   
   // Add shake effect to target
-  sprite.classList.add('shake');
+  targetSprite.classList.add('shake');
   setTimeout(() => {
-    sprite.classList.remove('shake');
+    targetSprite.classList.remove('shake');
   }, 500);
   
-  // Remove damage text after animation
   setTimeout(() => {
-    damageText.remove();
+    if (damageEl.parentNode) {
+      damageEl.parentNode.removeChild(damageEl);
+    }
   }, 2000);
 }
 
-// Shield effect
 function showShieldEffect(target) {
-  const sprite = document.getElementById(`${target}-kryptomon`);
-  const rect = sprite.getBoundingClientRect();
+  const targetSprite = target === 'player' ? 
+    document.getElementById('player-kryptomon') : 
+    document.getElementById('enemy-kryptomon');
   
-  const shield = document.createElement('div');
-  shield.className = 'shield-effect';
-  shield.style.left = `${rect.left + rect.width / 2 - 175}px`;
-  shield.style.top = `${rect.top + rect.height / 2 - 175}px`;
+  if (!targetSprite) return;
   
-  document.body.appendChild(shield);
+  const shieldEl = document.createElement('div');
+  shieldEl.className = 'shield-effect';
+  
+  const rect = targetSprite.getBoundingClientRect();
+  shieldEl.style.left = `${rect.left + rect.width / 2 - 175}px`;
+  shieldEl.style.top = `${rect.top + rect.height / 2 - 175}px`;
+  
+  document.body.appendChild(shieldEl);
   
   // Add shield glow to sprite
-  sprite.classList.add('shield');
+  targetSprite.classList.add('shield');
   setTimeout(() => {
-    sprite.classList.remove('shield');
+    targetSprite.classList.remove('shield');
   }, 1000);
   
-  // Remove shield effect after animation
   setTimeout(() => {
-    shield.remove();
+    if (shieldEl.parentNode) {
+      shieldEl.parentNode.removeChild(shieldEl);
+    }
   }, 1000);
 }
 
-// Ultimate effect
 function showUltimateEffect(attacker) {
-  const sprite = document.getElementById(`${attacker}-kryptomon`);
-  const rect = sprite.getBoundingClientRect();
+  const attackerSprite = attacker === 'player' ? 
+    document.getElementById('player-kryptomon') : 
+    document.getElementById('enemy-kryptomon');
   
-  const ultimate = document.createElement('div');
-  ultimate.className = 'ultimate-effect';
-  ultimate.style.left = `${rect.left + rect.width / 2}px`;
-  ultimate.style.top = `${rect.top + rect.height / 2}px`;
+  if (!attackerSprite) return;
   
-  document.body.appendChild(ultimate);
+  const ultimateEl = document.createElement('div');
+  ultimateEl.className = 'ultimate-effect';
   
-  // Add glow to attacker
-  sprite.classList.add('glow');
+  const rect = attackerSprite.getBoundingClientRect();
+  ultimateEl.style.left = `${rect.left + rect.width / 2}px`;
+  ultimateEl.style.top = `${rect.top + rect.height / 2}px`;
+  
+  document.body.appendChild(ultimateEl);
+  
+  // Add glow effect to attacker
+  attackerSprite.classList.add('glow');
   setTimeout(() => {
-    sprite.classList.remove('glow');
+    attackerSprite.classList.remove('glow');
   }, 1500);
   
-  // Remove ultimate effect after animation
   setTimeout(() => {
-    ultimate.remove();
+    if (ultimateEl.parentNode) {
+      ultimateEl.parentNode.removeChild(ultimateEl);
+    }
   }, 1500);
 }
 
-// Emoji panel setup
+// Emoji system
 function setupEmojiPanel() {
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiPanel = document.getElementById('emoji-panel');
-  const emojiItems = document.querySelectorAll('.emoji-item');
   
   emojiBtn.addEventListener('click', () => {
     emojiPanel.style.display = emojiPanel.style.display === 'block' ? 'none' : 'block';
   });
   
+  // Close panel when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!emojiBtn.contains(e.target) && !emojiPanel.contains(e.target)) {
+      emojiPanel.style.display = 'none';
+    }
+  });
+  
+  // Handle emoji selection
+  const emojiItems = document.querySelectorAll('.emoji-item');
   emojiItems.forEach(item => {
     item.addEventListener('click', () => {
       const emoji = item.dataset.emoji;
@@ -1914,16 +1928,8 @@ function setupEmojiPanel() {
       emojiPanel.style.display = 'none';
     });
   });
-  
-  // Close emoji panel when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!emojiBtn.contains(e.target) && !emojiPanel.contains(e.target)) {
-      emojiPanel.style.display = 'none';
-    }
-  });
 }
 
-// Emoji animation
 function showEmojiAnimation(emoji) {
   const emojiEl = document.createElement('div');
   emojiEl.className = 'opponent-emoji';
@@ -1932,7 +1938,9 @@ function showEmojiAnimation(emoji) {
   document.body.appendChild(emojiEl);
   
   setTimeout(() => {
-    emojiEl.remove();
+    if (emojiEl.parentNode) {
+      emojiEl.parentNode.removeChild(emojiEl);
+    }
   }, 3000);
 }
 
@@ -1941,31 +1949,39 @@ function handleGameEnd(data) {
   const winnerName = data.winnerName || 'Unknown';
   const isWinner = data.winner === playerIndex;
   
-  let message = '';
-  if (data.surrendered) {
-    if (data.surrenderer === playerIndex) {
-      message = 'You surrendered. Better luck next time!';
-    } else {
-      message = 'Opponent surrendered. You win!';
-    }
-  } else {
-    if (isWinner) {
-      message = `Congratulations! You won!`;
-    } else {
-      message = `Game Over! ${winnerName} wins!`;
-    }
+  if (turnTimer) {
+    clearInterval(turnTimer);
+    turnTimer = null;
   }
   
   setTimeout(() => {
-    alert(message);
+    if (isWinner) {
+      alert(`🏆 Congratulations! You won the battle!`);
+    } else {
+      alert(`😔 Game Over! ${winnerName} wins!`);
+    }
+    
     resetToMainScreen();
   }, 2000);
 }
 
 // Initialize everything when page loads
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 Kryptomon Battle Arena loaded');
+window.addEventListener('load', () => {
+  console.log('🚀 Game loaded, initializing socket...');
   initializeSocket();
+});
+
+// Handle page visibility changes
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    console.log('🙈 Page hidden');
+  } else {
+    console.log('👀 Page visible');
+    if (socket && !socket.connected) {
+      console.log('🔄 Reconnecting socket...');
+      socket.connect();
+    }
+  }
 });
 </script>
 </body>
