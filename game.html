@@ -557,7 +557,7 @@
     margin-right: 5px;
   }
 
-  /* Kryptomon Team Selection - DÜZELTME: Sol orta ve sağ orta */
+  /* Kryptomon Team Selection - Sol orta ve sağ orta */
   .kryptomon-team {
     position: absolute;
     top: 50%;
@@ -647,45 +647,200 @@
   }
 
   .kryptomon-sprite {
-    width: 300px; /* Küçültüldü */
-    height: 300px; /* Küçültüldü */
+    width: 300px;
+    height: 300px;
     object-fit: contain;
     transition: all 0.3s ease;
     filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
   }
 
-  /* DÜZELTME: Rakip Kryptomon'u ters çevir */
+  /* Rakip Kryptomon'u ters çevir */
   .trainer.right .kryptomon-sprite {
-    transform: scaleX(-1); /* Sağdaki Kryptomon'u ters çevir */
+    transform: scaleX(-1);
   }
 
+  /* ATTACK ANIMATION */
+  .kryptomon-sprite.attack {
+    animation: attackAnimation 1s ease-in-out;
+  }
+
+  @keyframes attackAnimation {
+    0% { transform: translateX(0) scale(1); }
+    25% { transform: translateX(30px) scale(1.1); filter: drop-shadow(0 0 20px #e74c3c); }
+    50% { transform: translateX(50px) scale(1.15) rotate(10deg); filter: drop-shadow(0 0 30px #e74c3c); }
+    75% { transform: translateX(30px) scale(1.1); filter: drop-shadow(0 0 20px #e74c3c); }
+    100% { transform: translateX(0) scale(1); }
+  }
+
+  .trainer.right .kryptomon-sprite.attack {
+    animation: attackAnimationRight 1s ease-in-out;
+  }
+
+  @keyframes attackAnimationRight {
+    0% { transform: scaleX(-1) translateX(0) scale(1); }
+    25% { transform: scaleX(-1) translateX(30px) scale(1.1); filter: drop-shadow(0 0 20px #e74c3c); }
+    50% { transform: scaleX(-1) translateX(50px) scale(1.15) rotate(-10deg); filter: drop-shadow(0 0 30px #e74c3c); }
+    75% { transform: scaleX(-1) translateX(30px) scale(1.1); filter: drop-shadow(0 0 20px #e74c3c); }
+    100% { transform: scaleX(-1) translateX(0) scale(1); }
+  }
+
+  /* DEFEND ANIMATION */
+  .kryptomon-sprite.defend {
+    animation: defendAnimation 1.5s ease-in-out;
+  }
+
+  @keyframes defendAnimation {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db); }
+    25% { transform: scale(0.9); filter: drop-shadow(0 0 25px #3498db); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 40px #3498db); }
+    75% { transform: scale(0.95); filter: drop-shadow(0 0 25px #3498db); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db); }
+  }
+
+  .trainer.right .kryptomon-sprite.defend {
+    animation: defendAnimationRight 1.5s ease-in-out;
+  }
+
+  @keyframes defendAnimationRight {
+    0% { transform: scaleX(-1) scale(1); filter: drop-shadow(0 0 0px #3498db); }
+    25% { transform: scaleX(-1) scale(0.9); filter: drop-shadow(0 0 25px #3498db); }
+    50% { transform: scaleX(-1) scale(1.05); filter: drop-shadow(0 0 40px #3498db); }
+    75% { transform: scaleX(-1) scale(0.95); filter: drop-shadow(0 0 25px #3498db); }
+    100% { transform: scaleX(-1) scale(1); filter: drop-shadow(0 0 0px #3498db); }
+  }
+
+  /* SKILL ANIMATION */
+  .kryptomon-sprite.skill {
+    animation: skillAnimation 2s ease-in-out;
+  }
+
+  @keyframes skillAnimation {
+    0% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0px #9b59b6); }
+    20% { transform: scale(1.1) rotate(5deg); filter: drop-shadow(0 0 30px #9b59b6); }
+    40% { transform: scale(1.2) rotate(-5deg); filter: drop-shadow(0 0 50px #9b59b6); }
+    60% { transform: scale(1.15) rotate(5deg); filter: drop-shadow(0 0 40px #9b59b6); }
+    80% { transform: scale(1.05) rotate(-2deg); filter: drop-shadow(0 0 20px #9b59b6); }
+    100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 0px #9b59b6); }
+  }
+
+  .trainer.right .kryptomon-sprite.skill {
+    animation: skillAnimationRight 2s ease-in-out;
+  }
+
+  @keyframes skillAnimationRight {
+    0% { transform: scaleX(-1) scale(1) rotate(0deg); filter: drop-shadow(0 0 0px #9b59b6); }
+    20% { transform: scaleX(-1) scale(1.1) rotate(-5deg); filter: drop-shadow(0 0 30px #9b59b6); }
+    40% { transform: scaleX(-1) scale(1.2) rotate(5deg); filter: drop-shadow(0 0 50px #9b59b6); }
+    60% { transform: scaleX(-1) scale(1.15) rotate(-5deg); filter: drop-shadow(0 0 40px #9b59b6); }
+    80% { transform: scaleX(-1) scale(1.05) rotate(2deg); filter: drop-shadow(0 0 20px #9b59b6); }
+    100% { transform: scaleX(-1) scale(1) rotate(0deg); filter: drop-shadow(0 0 0px #9b59b6); }
+  }
+
+  /* ULTIMATE ANIMATION */
+  .kryptomon-sprite.ultimate {
+    animation: ultimateAnimation 3s ease-in-out;
+  }
+
+  @keyframes ultimateAnimation {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px #f1c40f) hue-rotate(0deg); }
+    10% { transform: scale(1.3); filter: drop-shadow(0 0 60px #f1c40f) hue-rotate(60deg); }
+    20% { transform: scale(1.5) rotate(10deg); filter: drop-shadow(0 0 80px #f1c40f) hue-rotate(120deg); }
+    30% { transform: scale(1.4) rotate(-10deg); filter: drop-shadow(0 0 100px #f1c40f) hue-rotate(180deg); }
+    50% { transform: scale(1.6) rotate(15deg); filter: drop-shadow(0 0 120px #f1c40f) hue-rotate(240deg); }
+    70% { transform: scale(1.3) rotate(-5deg); filter: drop-shadow(0 0 80px #f1c40f) hue-rotate(300deg); }
+    90% { transform: scale(1.1); filter: drop-shadow(0 0 40px #f1c40f) hue-rotate(320deg); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px #f1c40f) hue-rotate(360deg); }
+  }
+
+  .trainer.right .kryptomon-sprite.ultimate {
+    animation: ultimateAnimationRight 3s ease-in-out;
+  }
+
+  @keyframes ultimateAnimationRight {
+    0% { transform: scaleX(-1) scale(1); filter: drop-shadow(0 0 0px #f1c40f) hue-rotate(0deg); }
+    10% { transform: scaleX(-1) scale(1.3); filter: drop-shadow(0 0 60px #f1c40f) hue-rotate(60deg); }
+    20% { transform: scaleX(-1) scale(1.5) rotate(-10deg); filter: drop-shadow(0 0 80px #f1c40f) hue-rotate(120deg); }
+    30% { transform: scaleX(-1) scale(1.4) rotate(10deg); filter: drop-shadow(0 0 100px #f1c40f) hue-rotate(180deg); }
+    50% { transform: scaleX(-1) scale(1.6) rotate(-15deg); filter: drop-shadow(0 0 120px #f1c40f) hue-rotate(240deg); }
+    70% { transform: scaleX(-1) scale(1.3) rotate(5deg); filter: drop-shadow(0 0 80px #f1c40f) hue-rotate(300deg); }
+    90% { transform: scaleX(-1) scale(1.1); filter: drop-shadow(0 0 40px #f1c40f) hue-rotate(320deg); }
+    100% { transform: scaleX(-1) scale(1); filter: drop-shadow(0 0 0px #f1c40f) hue-rotate(360deg); }
+  }
+
+  /* SWITCH ANIMATION */
+  .kryptomon-sprite.switch-out {
+    animation: switchOutAnimation 1s ease-in-out;
+  }
+
+  @keyframes switchOutAnimation {
+    0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+    50% { transform: scale(0.5) rotate(180deg); opacity: 0.5; filter: brightness(2) hue-rotate(180deg); }
+    100% { transform: scale(0) rotate(360deg); opacity: 0; filter: brightness(0); }
+  }
+
+  .trainer.right .kryptomon-sprite.switch-out {
+    animation: switchOutAnimationRight 1s ease-in-out;
+  }
+
+  @keyframes switchOutAnimationRight {
+    0% { transform: scaleX(-1) scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+    50% { transform: scaleX(-1) scale(0.5) rotate(-180deg); opacity: 0.5; filter: brightness(2) hue-rotate(180deg); }
+    100% { transform: scaleX(-1) scale(0) rotate(-360deg); opacity: 0; filter: brightness(0); }
+  }
+
+  .kryptomon-sprite.switch-in {
+    animation: switchInAnimation 1s ease-in-out;
+  }
+
+  @keyframes switchInAnimation {
+    0% { transform: scale(0) rotate(-360deg); opacity: 0; filter: brightness(0); }
+    50% { transform: scale(0.5) rotate(-180deg); opacity: 0.5; filter: brightness(2) hue-rotate(-180deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+  }
+
+  .trainer.right .kryptomon-sprite.switch-in {
+    animation: switchInAnimationRight 1s ease-in-out;
+  }
+
+  @keyframes switchInAnimationRight {
+    0% { transform: scaleX(-1) scale(0) rotate(360deg); opacity: 0; filter: brightness(0); }
+    50% { transform: scaleX(-1) scale(0.5) rotate(180deg); opacity: 0.5; filter: brightness(2) hue-rotate(-180deg); }
+    100% { transform: scaleX(-1) scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+  }
+
+  /* DAMAGE SHAKE ANIMATION */
   .kryptomon-sprite.shake {
-    animation: shake 0.5s ease-in-out;
+    animation: damageShake 0.5s ease-in-out;
   }
 
-  .kryptomon-sprite.glow {
-    filter: drop-shadow(0 0 30px #FFD700);
-  }
-
-  .kryptomon-sprite.shield {
-    filter: drop-shadow(0 0 25px #3498db);
-  }
-
-  @keyframes shake {
+  @keyframes damageShake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
+    10% { transform: translateX(-10px); }
+    20% { transform: translateX(10px); }
+    30% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    50% { transform: translateX(-6px); }
+    60% { transform: translateX(6px); }
+    70% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+    90% { transform: translateX(-2px); }
   }
 
-  /* Rakip için shake animasyonunu da ters çevir */
   .trainer.right .kryptomon-sprite.shake {
-    animation: shakeRight 0.5s ease-in-out;
+    animation: damageShakeRight 0.5s ease-in-out;
   }
 
-  @keyframes shakeRight {
+  @keyframes damageShakeRight {
     0%, 100% { transform: scaleX(-1) translateX(0); }
-    25% { transform: scaleX(-1) translateX(-10px); }
-    75% { transform: scaleX(-1) translateX(10px); }
+    10% { transform: scaleX(-1) translateX(-10px); }
+    20% { transform: scaleX(-1) translateX(10px); }
+    30% { transform: scaleX(-1) translateX(-8px); }
+    40% { transform: scaleX(-1) translateX(8px); }
+    50% { transform: scaleX(-1) translateX(-6px); }
+    60% { transform: scaleX(-1) translateX(6px); }
+    70% { transform: scaleX(-1) translateX(-4px); }
+    80% { transform: scaleX(-1) translateX(4px); }
+    90% { transform: scaleX(-1) translateX(-2px); }
   }
 
   /* Game Controls */
@@ -1277,7 +1432,7 @@ function initializeSocket() {
     currentGameId = data.gameId;
     gameState = data.gameState;
     
-    // DÜZELTME: Oyun başladığında tüm ekranları gizle ve oyun ekranını göster
+    // Önemli: Oyun başladığında tüm ekranları gizle ve oyun ekranını göster
     hideAllScreens();
     showGameScreen();
     
@@ -1315,16 +1470,20 @@ function initializeSocket() {
     alert('Opponent disconnected. You win!');
     resetToMainScreen();
   });
+
+  socket.on('error', (data) => {
+    console.log('❌ Server error:', data);
+    alert(data.message || 'An error occurred');
+  });
 }
 
-// Ekran yönetim fonksiyonları - DÜZELTME
+// Ekran yönetim fonksiyonları
 function hideAllScreens() {
   playerNameContainer.style.display = 'none';
   metamaskContainer.style.display = 'none';
   nftSelectionContainer.style.display = 'none';
   waitingContainer.style.display = 'none';
   gameContainer.style.display = 'none';
-  console.log('🔧 All screens hidden');
 }
 
 function showGameScreen() {
@@ -1336,7 +1495,6 @@ function showGameScreen() {
 function showWaitingScreen() {
   hideAllScreens();
   waitingContainer.style.display = 'flex';
-  console.log('⏳ Waiting screen shown');
 }
 
 function resetToMainScreen() {
@@ -1353,7 +1511,6 @@ function resetToMainScreen() {
     clearInterval(turnTimer);
     turnTimer = null;
   }
-  console.log('🔄 Reset to main screen');
 }
 
 // Connection status
@@ -1633,14 +1790,14 @@ function updateMainKryptomonSprites() {
   }
 }
 
-// Game state update - DÜZELTME: Turn sistemi
+// Game state update
 function updateGameState() {
   if (!gameState) return;
   
   const playerData = gameState.gameData[playerIndex];
   const enemyData = gameState.gameData[1 - playerIndex];
   
-  // DÜZELTME: Turn kontrolü
+  // Update turn info
   isMyTurn = gameState.currentTurn === playerIndex;
   document.getElementById('current-turn').textContent = gameState.turnCount;
   
@@ -1658,10 +1815,6 @@ function updateGameState() {
       <div>Opponent's Turn</div>
       <div class="turn-timer">⏱️ <span id="turn-timer">30</span>s</div>
     `;
-    if (turnTimer) {
-      clearInterval(turnTimer);
-      turnTimer = null;
-    }
   }
   
   // Update HP bars
@@ -1677,8 +1830,6 @@ function updateGameState() {
   
   // Update Kryptomon teams
   updateKryptomonTeams();
-  
-  console.log('🔄 Game state updated. Is my turn:', isMyTurn, 'Current turn:', gameState.currentTurn, 'Player index:', playerIndex);
 }
 
 function updateHPBar(player, health, maxHealth) {
@@ -1718,8 +1869,6 @@ function updateControlButtons(playerData) {
   } else {
     defendBtn.textContent = '🛡️ Defend';
   }
-  
-  console.log('🎮 Control buttons updated. Can act:', canAct, 'Attack disabled:', attackBtn.disabled);
 }
 
 // Game controls setup
@@ -1746,15 +1895,13 @@ function setupGameControls() {
 }
 
 function makeMove(move, activeKryptomon = null) {
-  if (!isMyTurn || !gameState.gameActive) {
-    console.log('❌ Cannot make move - not my turn or game not active');
-    return;
-  }
+  if (!isMyTurn || !gameState.gameActive) return;
   
   console.log('🎯 Making move:', move, activeKryptomon);
   
-  // Play sound
+  // Play sound and animation
   playSound(move);
+  playMoveAnimation(move, playerIndex);
   
   socket.emit('playerMove', {
     move: move,
@@ -1764,6 +1911,61 @@ function makeMove(move, activeKryptomon = null) {
   // Disable buttons temporarily
   const buttons = document.querySelectorAll('.control-btn');
   buttons.forEach(btn => btn.disabled = true);
+}
+
+// ANIMASYON FONKSIYONLARI
+function playMoveAnimation(move, playerIdx) {
+  const spriteId = playerIdx === playerIndex ? 'player-kryptomon' : 'enemy-kryptomon';
+  const sprite = document.getElementById(spriteId);
+  
+  if (!sprite) return;
+  
+  // Önceki animasyonları temizle
+  sprite.className = sprite.className.replace(/\b(attack|defend|skill|ultimate|switch-out|switch-in|shake)\b/g, '');
+  
+  // Yeni animasyonu ekle
+  setTimeout(() => {
+    sprite.classList.add(move);
+  }, 50);
+  
+  // Animasyonu temizle
+  const duration = move === 'ultimate' ? 3000 : move === 'skill' ? 2000 : move === 'defend' ? 1500 : 1000;
+  setTimeout(() => {
+    sprite.classList.remove(move);
+  }, duration);
+}
+
+function playDamageAnimation(targetIndex) {
+  const spriteId = targetIndex === playerIndex ? 'player-kryptomon' : 'enemy-kryptomon';
+  const sprite = document.getElementById(spriteId);
+  
+  if (!sprite) return;
+  
+  sprite.classList.add('shake');
+  setTimeout(() => {
+    sprite.classList.remove('shake');
+  }, 500);
+}
+
+function playSwitchAnimation(playerIdx, newKryptomon) {
+  const spriteId = playerIdx === playerIndex ? 'player-kryptomon' : 'enemy-kryptomon';
+  const sprite = document.getElementById(spriteId);
+  
+  if (!sprite) return;
+  
+  // Switch out animation
+  sprite.classList.add('switch-out');
+  
+  setTimeout(() => {
+    // Change sprite image
+    sprite.src = newKryptomon.image;
+    sprite.classList.remove('switch-out');
+    sprite.classList.add('switch-in');
+    
+    setTimeout(() => {
+      sprite.classList.remove('switch-in');
+    }, 1000);
+  }, 1000);
 }
 
 // Turn timer
@@ -1781,7 +1983,6 @@ function startTurnTimer() {
     
     if (timeLeft <= 0) {
       clearInterval(turnTimer);
-      turnTimer = null;
       if (isMyTurn) {
         socket.emit('turnTimeout');
       }
@@ -1793,123 +1994,102 @@ function startTurnTimer() {
 function handleMoveResult(moveResult) {
   console.log('🎬 Handling move result:', moveResult);
   
+  // Play attacker animation
+  if (moveResult.moveType && moveResult.moveType !== 'switch') {
+    playMoveAnimation(moveResult.moveType, moveResult.attackerIndex);
+  }
+  
+  // Play damage animation on target
   if (moveResult.damage > 0) {
-    showDamageText(moveResult.damage, moveResult.isCritical, moveResult.targetIndex);
+    setTimeout(() => {
+      playDamageAnimation(moveResult.targetIndex);
+      showDamageText(moveResult.damage, moveResult.isCritical, moveResult.targetIndex);
+    }, 500);
   }
   
+  // Handle shield effect
   if (moveResult.shieldEffect) {
-    showShieldEffect(moveResult.attackerIndex === playerIndex ? 'enemy' : 'player');
+    showShieldEffect(moveResult.targetIndex === playerIndex ? 'player' : 'enemy');
   }
   
+  // Handle ultimate effect
   if (moveResult.ultimateEffect) {
     showUltimateEffect(moveResult.attackerIndex === playerIndex ? 'player' : 'enemy');
   }
   
-  if (moveResult.kryptomonSwitched) {
+  // Handle Kryptomon switching
+  if (moveResult.kryptomonSwitched || moveResult.autoSwitched) {
     playSound('switch');
-  }
-  
-  if (moveResult.autoSwitched) {
-    playSound('switch');
+    if (moveResult.newActiveKryptomon) {
+      playSwitchAnimation(moveResult.attackerIndex, moveResult.newActiveKryptomon);
+    }
   }
 }
 
-// Visual effects
+// Damage text display
 function showDamageText(damage, isCritical, targetIndex) {
-  const targetSprite = targetIndex === playerIndex ? 
-    document.getElementById('player-kryptomon') : 
-    document.getElementById('enemy-kryptomon');
+  const damageText = document.createElement('div');
+  damageText.className = 'damage-text';
+  if (isCritical) {
+    damageText.classList.add('critical');
+  }
+  damageText.textContent = `-${damage}`;
   
-  if (!targetSprite) return;
+  // Position near the target
+  const targetSprite = document.getElementById(targetIndex === playerIndex ? 'player-kryptomon' : 'enemy-kryptomon');
+  if (targetSprite) {
+    const rect = targetSprite.getBoundingClientRect();
+    damageText.style.left = rect.left + rect.width / 2 + 'px';
+    damageText.style.top = rect.top + rect.height / 2 + 'px';
+  }
   
-  const damageEl = document.createElement('div');
-  damageEl.className = `damage-text ${isCritical ? 'critical' : ''}`;
-  damageEl.textContent = `-${damage}`;
+  document.body.appendChild(damageText);
   
-  const rect = targetSprite.getBoundingClientRect();
-  damageEl.style.left = `${rect.left + rect.width / 2}px`;
-  damageEl.style.top = `${rect.top}px`;
-  
-  document.body.appendChild(damageEl);
-  
-  // Add shake effect to target
-  targetSprite.classList.add('shake');
+  // Remove after animation
   setTimeout(() => {
-    targetSprite.classList.remove('shake');
-  }, 500);
-  
-  setTimeout(() => {
-    if (damageEl.parentNode) {
-      damageEl.parentNode.removeChild(damageEl);
-    }
+    document.body.removeChild(damageText);
   }, 2000);
 }
 
+// Shield effect
 function showShieldEffect(target) {
-  const targetSprite = target === 'player' ? 
-    document.getElementById('player-kryptomon') : 
-    document.getElementById('enemy-kryptomon');
+  const sprite = document.getElementById(target === 'player' ? 'player-kryptomon' : 'enemy-kryptomon');
+  if (!sprite) return;
   
-  if (!targetSprite) return;
+  const shieldEffect = document.createElement('div');
+  shieldEffect.className = 'shield-effect';
   
-  const shieldEl = document.createElement('div');
-  shieldEl.className = 'shield-effect';
+  const rect = sprite.getBoundingClientRect();
+  shieldEffect.style.left = rect.left - 25 + 'px';
+  shieldEffect.style.top = rect.top - 25 + 'px';
   
-  const rect = targetSprite.getBoundingClientRect();
-  shieldEl.style.left = `${rect.left + rect.width / 2 - 175}px`;
-  shieldEl.style.top = `${rect.top + rect.height / 2 - 175}px`;
-  
-  document.body.appendChild(shieldEl);
-  
-  // Add shield glow to sprite
-  targetSprite.classList.add('shield');
-  setTimeout(() => {
-    targetSprite.classList.remove('shield');
-  }, 1000);
+  document.body.appendChild(shieldEffect);
   
   setTimeout(() => {
-    if (shieldEl.parentNode) {
-      shieldEl.parentNode.removeChild(shieldEl);
-    }
+    document.body.removeChild(shieldEffect);
   }, 1000);
 }
 
+// Ultimate effect
 function showUltimateEffect(attacker) {
-  const attackerSprite = attacker === 'player' ? 
-    document.getElementById('player-kryptomon') : 
-    document.getElementById('enemy-kryptomon');
+  const ultimateEffect = document.createElement('div');
+  ultimateEffect.className = 'ultimate-effect';
   
-  if (!attackerSprite) return;
-  
-  const ultimateEl = document.createElement('div');
-  ultimateEl.className = 'ultimate-effect';
-  
-  const rect = attackerSprite.getBoundingClientRect();
-  ultimateEl.style.left = `${rect.left + rect.width / 2}px`;
-  ultimateEl.style.top = `${rect.top + rect.height / 2}px`;
-  
-  document.body.appendChild(ultimateEl);
-  
-  // Add glow effect to attacker
-  attackerSprite.classList.add('glow');
-  setTimeout(() => {
-    attackerSprite.classList.remove('glow');
-  }, 1500);
+  const battleArena = document.querySelector('.battle-arena');
+  battleArena.appendChild(ultimateEffect);
   
   setTimeout(() => {
-    if (ultimateEl.parentNode) {
-      ultimateEl.parentNode.removeChild(ultimateEl);
-    }
+    battleArena.removeChild(ultimateEffect);
   }, 1500);
 }
 
-// Emoji system
+// Emoji panel setup
 function setupEmojiPanel() {
   const emojiBtn = document.getElementById('emoji-btn');
   const emojiPanel = document.getElementById('emoji-panel');
   
   emojiBtn.addEventListener('click', () => {
-    emojiPanel.style.display = emojiPanel.style.display === 'block' ? 'none' : 'block';
+    emojiPanel.style.display = emojiPanel.style.display === 'none' ? 'block' : 'none';
   });
   
   // Close panel when clicking outside
@@ -1923,65 +2103,61 @@ function setupEmojiPanel() {
   const emojiItems = document.querySelectorAll('.emoji-item');
   emojiItems.forEach(item => {
     item.addEventListener('click', () => {
-      const emoji = item.dataset.emoji;
+      const emoji = item.getAttribute('data-emoji');
       socket.emit('sendEmoji', { emoji });
       emojiPanel.style.display = 'none';
     });
   });
 }
 
+// Show opponent emoji
 function showEmojiAnimation(emoji) {
-  const emojiEl = document.createElement('div');
-  emojiEl.className = 'opponent-emoji';
-  emojiEl.textContent = emoji;
+  const emojiElement = document.createElement('div');
+  emojiElement.className = 'opponent-emoji';
+  emojiElement.textContent = emoji;
   
-  document.body.appendChild(emojiEl);
+  document.body.appendChild(emojiElement);
   
   setTimeout(() => {
-    if (emojiEl.parentNode) {
-      emojiEl.parentNode.removeChild(emojiEl);
-    }
+    document.body.removeChild(emojiElement);
   }, 3000);
 }
 
 // Game end handling
 function handleGameEnd(data) {
-  const winnerName = data.winnerName || 'Unknown';
-  const isWinner = data.winner === playerIndex;
-  
   if (turnTimer) {
     clearInterval(turnTimer);
     turnTimer = null;
   }
   
-  setTimeout(() => {
-    if (isWinner) {
-      alert(`🏆 Congratulations! You won the battle!`);
+  const winnerName = data.winnerName || 'Unknown';
+  const isWinner = data.winner === playerIndex;
+  
+  let message = '';
+  if (data.surrendered) {
+    if (data.surrenderer === playerIndex) {
+      message = 'You surrendered!';
     } else {
-      alert(`😔 Game Over! ${winnerName} wins!`);
+      message = 'Opponent surrendered! You win!';
     }
-    
+  } else if (isWinner) {
+    message = '🎉 Victory! You won the battle!';
+  } else {
+    message = '💀 Defeat! Better luck next time!';
+  }
+  
+  setTimeout(() => {
+    alert(message);
     resetToMainScreen();
   }, 2000);
 }
 
-// Initialize everything when page loads
-window.addEventListener('load', () => {
-  console.log('🚀 Game loaded, initializing socket...');
+// Initialize the game when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
   initializeSocket();
-});
-
-// Handle page visibility changes
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) {
-    console.log('🙈 Page hidden');
-  } else {
-    console.log('👀 Page visible');
-    if (socket && !socket.connected) {
-      console.log('🔄 Reconnecting socket...');
-      socket.connect();
-    }
-  }
+  
+  // Auto-focus on name input
+  document.getElementById('player-name-input').focus();
 });
 </script>
 </body>
