@@ -234,9 +234,9 @@ function connectToServer(retryCount = 0) {
   updateConnectionStatus(retryCount === 0 ? 'connecting' : 'reconnecting');
   connectionStatus.retryCount = retryCount;
   
-  // Use same domain (Vercel)
+  // ✅ Vercel single-domain architecture
   const serverUrl = window.location.origin;
-  console.log(`🔌 Connecting to server (attempt ${retryCount + 1}):`, serverUrl);
+  console.log(`🔌 Connecting to Vercel server (attempt ${retryCount + 1}):`, serverUrl);
   
   // Clear any existing connection
   if (gameState.socket) {
@@ -247,7 +247,7 @@ function connectToServer(retryCount = 0) {
   gameState.socket = io(serverUrl, {
     withCredentials: true,
     timeout: 30000,
-    transports: ['polling', 'websocket'],
+    transports: ['polling', 'websocket'], // Polling first for stability
     forceNew: true,
     reconnection: true,
     reconnectionAttempts: 3,
