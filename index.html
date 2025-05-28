@@ -2,557 +2,1406 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>NFT PvP Turn-Based Game + Chat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Kryptomon Battle Arena</title>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
 <style>
-  /* ... önceki CSS kodları aynı kalıyor ... */
-  body {
-    font-family: Arial, sans-serif;
-    background: #222;
-    color: #eee;
-    text-align: center;
+  * {
     margin: 0;
     padding: 0;
-    display: flex;
-    justify-content: center;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    color: white;
     height: 100vh;
     overflow: hidden;
+    position: fixed;
+    width: 100%;
   }
-  #container {
-    display: flex;
-    width: 900px;
-    max-width: 100vw;
-    background: #333;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  #game {
-    flex: 2;
-    padding: 20px;
-    position: relative;
-  }
-  
-  /* MetaMask Connection Styles */
-  #metamask-container, #nft-selection-container {
+
+  .screen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.9);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    flex-direction: column;
+    padding: 15px;
   }
-  
-  #metamask-modal, #nft-selection-modal {
-    background: #333;
-    padding: 40px;
-    border-radius: 15px;
+
+  .hidden {
+    display: none !important;
+  }
+
+  /* Start Screen - Mobile First */
+  #start-screen {
+    background: rgba(0,0,0,0.95);
     text-align: center;
-    max-width: 600px;
+  }
+
+  #start-screen h1 {
+    font-size: 2.5em;
+    margin-bottom: 15px;
+    color: #FFD700;
+    text-shadow: 0 0 20px rgba(255,215,0,0.5);
+  }
+
+  #start-screen input {
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    margin: 8px 0;
     width: 90%;
-    max-height: 80vh;
+    max-width: 300px;
+    text-align: center;
+  }
+
+  #start-screen button {
+    padding: 12px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    margin: 8px;
+    cursor: pointer;
+    width: 90%;
+    max-width: 300px;
+    font-weight: bold;
+  }
+
+  #start-btn {
+    background: #2ecc71;
+    color: white;
+  }
+
+  #guest-btn {
+    background: #95a5a6;
+    color: white;
+  }
+
+  #metamask-btn {
+    background: linear-gradient(45deg, #f6851b, #ff6b35);
+    color: white;
+  }
+
+  /* NFT Selection Screen */
+  #nft-screen {
+    background: rgba(0,0,0,0.95);
+    text-align: center;
     overflow-y: auto;
   }
-  
-  /* NFT Selection Styles */
-  #nft-grid {
+
+  .nft-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
-    margin-top: 20px;
+    margin: 20px 0;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 10px;
   }
-  
+
   .nft-card {
-    background: #444;
-    border-radius: 10px;
+    background: rgba(60, 60, 60, 0.9);
+    border-radius: 12px;
     padding: 10px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
     border: 2px solid transparent;
+    min-height: 180px;
   }
-  
+
   .nft-card:hover {
-    transform: scale(1.05);
+    transform: translateY(-3px);
     border-color: #3498db;
   }
-  
+
   .nft-card.selected {
     border-color: #2ecc71;
-    background: #2d5a2d;
+    background: rgba(46, 204, 113, 0.2);
   }
-  
+
   .nft-image {
     width: 100%;
-    height: 120px;
+    height: 100px;
     object-fit: cover;
-    border-radius: 5px;
-    margin-bottom: 10px;
-    background: #666;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    background: #333;
   }
-  
-  .loading {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 20px 0;
+
+  .nft-name {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 5px;
   }
-  
+
+  /* Waiting Screen - Mobile */
+  #waiting-screen {
+    background: rgba(0,0,0,0.95);
+    text-align: center;
+  }
+
+  #waiting-screen h2 {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+    color: #FFD700;
+  }
+
   .spinner {
-    border: 3px solid #444;
+    border: 3px solid #f3f3f3;
     border-top: 3px solid #3498db;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    animation: spin 1s linear infinite;
+    width: 40px;
+    height: 40px;
+    animation: spin 2s linear infinite;
+    margin: 15px auto;
   }
-  
+
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  
-  /* Diğer CSS kodları aynı kalıyor... */
+
+  /* Game Screen - Mobile Optimized */
+  #game-screen {
+    background: url('background.png') center/cover,
+                linear-gradient(45deg, #8B4513, #D2691E);
+    position: relative;
+  }
+
+  /* Mobile UI Layout */
+  .game-header {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    padding: 8px 15px;
+    border-radius: 12px;
+    text-align: center;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    border: 2px solid #FFD700;
+  }
+
+  .game-header div {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .timer {
+    color: #FFD700;
+    font-size: 16px;
+    margin-top: 3px;
+  }
+
+  /* Player Stats - Mobile Stack Layout */
+  .player-stats {
+    position: absolute;
+    top: 70px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    z-index: 100;
+  }
+
+  .stat-panel {
+    background: rgba(0,0,0,0.9);
+    padding: 8px 12px;
+    border-radius: 10px;
+    min-width: 45%;
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+
+  .stat-panel h3 {
+    font-size: 12px;
+    margin-bottom: 5px;
+    color: #FFD700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .player-avatar {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 2px solid #FFD700;
+  }
+
+  .stat-bar {
+    background: #333;
+    height: 12px;
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 3px 0;
+  }
+
+  .stat-fill {
+    height: 100%;
+    transition: width 0.5s ease;
+  }
+
+  .hp-fill {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+  }
+
+  .mp-fill {
+    background: linear-gradient(90deg, #3498db, #2980b9);
+  }
+
+  .stat-text {
+    font-size: 10px;
+    color: #fff;
+  }
+
+  /* Battle Arena - Mobile Centered */
+  .battle-arena {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 90%;
+    max-width: 350px;
+    height: 200px;
+    gap: 50px;
+  }
+
+  .kryptomon {
+    width: 120px;
+    height: 120px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .kryptomon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+
+  .kryptomon.enemy img {
+    transform: scaleX(-1);
+  }
+
+  /* Damage Text */
+  .damage-text {
+    position: absolute;
+    font-size: 20px;
+    font-weight: bold;
+    pointer-events: none;
+    z-index: 200;
+    animation: damageFloat 2s ease-out forwards;
+  }
+
+  .damage-text.damage {
+    color: #e74c3c;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  }
+
+  .damage-text.critical {
+    color: #FFD700;
+    font-size: 28px;
+    text-shadow: 0 0 10px #FFD700;
+  }
+
+  .damage-text.heal {
+    color: #2ecc71;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  }
+
+  .damage-text.mana {
+    color: #3498db;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  }
+
+  @keyframes damageFloat {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    50% { opacity: 1; transform: translateY(-40px) scale(1.2); }
+    100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
+  }
+
+  /* Enhanced Animations */
+  .kryptomon.attacking {
+    animation: attackBite 1.5s ease-in-out;
+  }
+
+  .kryptomon.defending {
+    animation: defendShield 1.5s ease-in-out;
+  }
+
+  .kryptomon.skill {
+    animation: skillGlow 2s ease-in-out;
+  }
+
+  .kryptomon.ultimate {
+    animation: ultimateBlast 3s ease-in-out;
+  }
+
+  @keyframes attackBite {
+    0% { transform: translateX(0) scale(1) rotate(0deg); }
+    20% { transform: translateX(15px) scale(1.1) rotate(5deg); }
+    40% { transform: translateX(25px) scale(1.2) rotate(-3deg); }
+    60% { transform: translateX(30px) scale(1.15) rotate(2deg); }
+    80% { transform: translateX(15px) scale(1.05) rotate(-1deg); }
+    100% { transform: translateX(0) scale(1) rotate(0deg); }
+  }
+
+  @keyframes defendShield {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db) brightness(1); }
+    25% { transform: scale(0.95); filter: drop-shadow(0 0 15px #3498db) brightness(1.3); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 25px #3498db) brightness(1.5); }
+    75% { transform: scale(0.98); filter: drop-shadow(0 0 15px #3498db) brightness(1.3); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db) brightness(1); }
+  }
+
+  @keyframes skillGlow {
+    0% { transform: scale(1) rotate(0deg); filter: brightness(1) hue-rotate(0deg); }
+    20% { transform: scale(1.1) rotate(5deg); filter: brightness(1.4) hue-rotate(60deg); }
+    40% { transform: scale(1.2) rotate(-5deg); filter: brightness(1.6) hue-rotate(120deg); }
+    60% { transform: scale(1.15) rotate(3deg); filter: brightness(1.5) hue-rotate(180deg); }
+    80% { transform: scale(1.05) rotate(-2deg); filter: brightness(1.3) hue-rotate(240deg); }
+    100% { transform: scale(1) rotate(0deg); filter: brightness(1) hue-rotate(360deg); }
+  }
+
+  @keyframes ultimateBlast {
+    0% { transform: scale(1) rotate(0deg); filter: brightness(1) saturate(1) hue-rotate(0deg); }
+    10% { transform: scale(1.2) rotate(15deg); filter: brightness(2) saturate(2) hue-rotate(60deg); }
+    20% { transform: scale(1.4) rotate(-20deg); filter: brightness(2.5) saturate(2.5) hue-rotate(120deg); }
+    30% { transform: scale(1.6) rotate(25deg); filter: brightness(3) saturate(3) hue-rotate(180deg); }
+    50% { transform: scale(1.8) rotate(-30deg); filter: brightness(3.5) saturate(3.5) hue-rotate(240deg); }
+    70% { transform: scale(1.5) rotate(20deg); filter: brightness(2.8) saturate(2.8) hue-rotate(300deg); }
+    85% { transform: scale(1.2) rotate(-10deg); filter: brightness(2) saturate(2) hue-rotate(330deg); }
+    100% { transform: scale(1) rotate(0deg); filter: brightness(1) saturate(1) hue-rotate(360deg); }
+  }
+
+  /* Controls - Mobile Bottom */
+  .controls {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 95%;
+    max-width: 320px;
+  }
+
+  .control-btn {
+    padding: 10px 6px;
+    font-size: 11px;
+    font-weight: bold;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 2px;
+    border: 2px solid rgba(255,255,255,0.3);
+    backdrop-filter: blur(5px);
+  }
+
+  .control-btn:disabled {
+    background: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  .control-btn:not(:disabled):active {
+    transform: scale(0.95);
+  }
+
+  .control-btn img {
+    width: 16px;
+    height: 16px;
+    margin-bottom: 1px;
+  }
+
+  .control-btn small {
+    font-size: 8px;
+    opacity: 0.9;
+  }
+
+  .btn-attack {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+  }
+
+  .btn-defend {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+  }
+
+  .btn-skill {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  }
+
+  .btn-ultimate {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+  }
+
+  /* Status Message */
+  .status-message {
+    position: absolute;
+    top: 160px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    padding: 8px 15px;
+    border-radius: 8px;
+    text-align: center;
+    color: #FFD700;
+    font-weight: bold;
+    font-size: 14px;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+
+  /* Connection Status */
+  .connection-status {
+    position: fixed;
+    top: 5px;
+    right: 5px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 10px;
+    font-weight: bold;
+    z-index: 9999;
+  }
+
+  .connected { background: #2ecc71; }
+  .disconnected { background: #e74c3c; }
+  .connecting { background: #f39c12; }
+
+  /* Team Display - Mobile Sides */
+  .team-display {
+    position: absolute;
+    top: 45%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 80;
+  }
+
+  .team-display.left {
+    left: 5px;
+  }
+
+  .team-display.right {
+    right: 5px;
+  }
+
+  .team-slot {
+    width: 35px;
+    height: 35px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .team-slot.active {
+    border-color: #2ecc71;
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+  }
+
+  .team-slot.dead {
+    opacity: 0.3;
+    border-color: #e74c3c;
+    cursor: not-allowed;
+  }
+
+  .team-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  /* Mobile Responsive */
+  @media (max-height: 600px) {
+    .battle-arena {
+      height: 150px;
+      gap: 40px;
+    }
+    
+    .kryptomon {
+      width: 100px;
+      height: 100px;
+    }
+    
+    .controls {
+      bottom: 10px;
+    }
+    
+    .control-btn {
+      min-height: 45px;
+      font-size: 10px;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .battle-arena {
+      gap: 30px;
+    }
+    
+    .kryptomon {
+      width: 110px;
+      height: 110px;
+    }
+    
+    .stat-panel {
+      min-width: 47%;
+      padding: 6px 8px;
+    }
+  }
+
+  /* Defend Effect */
+  .defend-effect {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #3498db;
+    border-radius: 15px;
+    animation: shieldPulse 2s ease-in-out;
+    pointer-events: none;
+  }
+
+  @keyframes shieldPulse {
+    0% { opacity: 0; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1); }
+  }
 </style>
 </head>
 <body>
+  <!-- Connection Status -->
+  <div id="connection-status" class="connection-status disconnected">Disconnected</div>
 
-<!-- MetaMask Connection Modal -->
-<div id="metamask-container">
-  <div id="metamask-modal">
-    <h2>Connect Your Wallet</h2>
-    <p>You need to connect your MetaMask wallet to play this game.</p>
-    <div id="metamask-status">
-      <p id="connection-status">Please install MetaMask or connect your wallet.</p>
-    </div>
-    <button id="connect-wallet-btn">Connect MetaMask</button>
+  <!-- Start Screen -->
+  <div id="start-screen" class="screen">
+    <h1>🐾 Kryptomon Battle</h1>
+    <p>Choose your battle mode</p>
+    <input type="text" id="player-name" placeholder="Enter your name" maxlength="20">
+    <br>
+    <button id="metamask-btn">🦊 Connect MetaMask & Play</button>
+    <button id="guest-btn">🎮 Play as Guest</button>
+    <div id="wallet-status" style="margin-top: 15px; font-size: 12px; opacity: 0.8;"></div>
   </div>
-</div>
 
-<!-- NFT Selection Modal -->
-<div id="nft-selection-container" style="display: none;">
-  <div id="nft-selection-modal">
-    <h2>Select Your NFT Character</h2>
-    <p>Choose an NFT from the collection to use as your character:</p>
-    <div id="nft-loading" class="loading" style="display: none;">
-      <div class="spinner"></div>
-      <span style="margin-left: 10px;">Loading your NFTs...</span>
+  <!-- NFT Selection Screen -->
+  <div id="nft-screen" class="screen hidden">
+    <h2>🎯 Select Your Battle Team</h2>
+    <p>Choose 3 Kryptomon NFTs from your collection</p>
+    <div id="nft-grid" class="nft-grid"></div>
+    <div style="margin-top: 20px;">
+      <button id="refresh-nfts-btn" style="background: #95a5a6; color: white; padding: 10px 20px; border: none; border-radius: 8px; margin: 5px;">🔄 Refresh NFTs</button>
+      <button id="select-nfts-btn" disabled style="background: #2ecc71; color: white; padding: 10px 20px; border: none; border-radius: 8px; margin: 5px;">⚔️ Start Battle!</button>
     </div>
-    <div id="nft-error" style="display: none; color: #e74c3c; margin: 20px 0;"></div>
-    <div id="nft-grid"></div>
-    <button id="select-nft-btn" disabled>Select Character</button>
-    <button id="refresh-nfts-btn" style="margin-left: 10px; background: #f39c12;">Refresh NFTs</button>
   </div>
-</div>
 
-<!-- Wallet Status Display -->
-<div class="wallet-status" id="wallet-status" style="display: none;">
-  Connected: <span id="connected-address"></span>
-</div>
+  <!-- Waiting Screen -->
+  <div id="waiting-screen" class="screen hidden">
+    <h2>Finding Opponent...</h2>
+    <div class="spinner"></div>
+    <p>Player: <span id="waiting-name"></span></p>
+    <p>Please wait while we find you an opponent</p>
+  </div>
 
-<div id="container" style="display: none;">
-  <!-- Oyun içeriği aynı kalıyor -->
-</div>
+  <!-- Game Screen -->
+  <div id="game-screen" class="screen hidden">
+    <!-- Game Header -->
+    <div class="game-header">
+      <div id="turn-info">Turn: Player 1</div>
+      <div class="timer" id="timer">30s</div>
+    </div>
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-<script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
+    <!-- Player Stats -->
+    <div class="player-stats">
+      <div class="stat-panel">
+        <h3>
+          <img class="player-avatar" id="your-avatar" src="you.jpg" alt="You">
+          <span id="your-name">You</span>
+        </h3>
+        <div class="stat-text">HP: <span id="your-hp">100</span></div>
+        <div class="stat-bar"><div class="stat-fill hp-fill" id="your-hp-bar" style="width: 100%"></div></div>
+        <div class="stat-text">MP: <span id="your-mp">0</span></div>
+        <div class="stat-bar"><div class="stat-fill mp-fill" id="your-mp-bar" style="width: 0%"></div></div>
+      </div>
+
+      <div class="stat-panel">
+        <h3>
+          <img class="player-avatar" id="enemy-avatar" src="enemy.jpg" alt="Enemy">
+          <span id="enemy-name">Enemy</span>
+        </h3>
+        <div class="stat-text">HP: <span id="enemy-hp">100</span></div>
+        <div class="stat-bar"><div class="stat-fill hp-fill" id="enemy-hp-bar" style="width: 100%"></div></div>
+        <div class="stat-text">MP: <span id="enemy-mp">0</span></div>
+        <div class="stat-bar"><div class="stat-fill mp-fill" id="enemy-mp-bar" style="width: 0%"></div></div>
+      </div>
+    </div>
+
+    <!-- Team Display -->
+    <div class="team-display left" id="your-team">
+      <div class="team-slot active" data-index="0">
+        <img src="kryptomon1.png" alt="Your Kryptomon 1">
+      </div>
+      <div class="team-slot" data-index="1">
+        <img src="kryptomon2.png" alt="Your Kryptomon 2">
+      </div>
+      <div class="team-slot" data-index="2">
+        <img src="kryptomon3.png" alt="Your Kryptomon 3">
+      </div>
+    </div>
+
+    <div class="team-display right" id="enemy-team">
+      <div class="team-slot active" data-index="0">
+        <img src="kryptomon4.png" alt="Enemy Kryptomon 1">
+      </div>
+      <div class="team-slot" data-index="1">
+        <img src="kryptomon5.png" alt="Enemy Kryptomon 2">
+      </div>
+      <div class="team-slot" data-index="2">
+        <img src="kryptomon6.png" alt="Enemy Kryptomon 3">
+      </div>
+    </div>
+
+    <!-- Battle Arena -->
+    <div class="battle-arena">
+      <div class="kryptomon" id="your-kryptomon">
+        <img src="kryptomon1.png" alt="Your Kryptomon">
+      </div>
+
+      <div class="kryptomon enemy" id="enemy-kryptomon">
+        <img src="kryptomon4.png" alt="Enemy Kryptomon">
+      </div>
+    </div>
+
+    <!-- Status Message -->
+    <div class="status-message" id="status">Your Turn</div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button class="control-btn btn-attack" id="attack-btn">
+        <img src="attack.png" alt="Attack">
+        ⚔️ Attack
+        <small>+2 MP</small>
+      </button>
+
+      <button class="control-btn btn-defend" id="defend-btn">
+        <img src="defence.png" alt="Defend">
+        🛡️ Defend
+        <small>Free</small>
+      </button>
+
+      <button class="control-btn btn-skill" id="skill-btn">
+        <img src="skill.png" alt="Skill">
+        ✨ Skill
+        <small>-2 MP</small>
+      </button>
+
+      <button class="control-btn btn-ultimate" id="ultimate-btn">
+        <img src="hydra.png" alt="Ultimate">
+        💥 Ultimate
+        <small>-6 MP</small>
+      </button>
+    </div>
+  </div>
+
 <script>
-  // MetaMask ve Web3 değişkenleri
-  let currentAccount = null;
-  let provider = null;
-  let signer = null;
-  let selectedNFT = null;
-  let userNFTs = [];
+console.log('🎮 Kryptomon Battle Arena Starting...');
 
-  // NFT Contract Address ve ABI
-  const NFT_CONTRACT_ADDRESS = "0xdfdb045e4300d04ec32058756ec2453409360c5b";
+// Contract configuration
+const CONTRACT_ADDRESS = '0xdfdb045E4300D04EC32058756Ec2453409360C5B';
+const CONTRACT_ABI = [
+  {
+    "inputs": [{"internalType": "address", "name": "owner", "type": "address"}],
+    "name": "balanceOf",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "address", "name": "owner", "type": "address"}, {"internalType": "uint256", "name": "index", "type": "uint256"}],
+    "name": "tokenOfOwnerByIndex",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "uint256", "name": "tokenId", "type": "uint256"}],
+    "name": "tokenURI",
+    "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+// Game state
+const gameState = {
+  socket: null,
+  connected: false,
+  playerName: '',
+  inGame: false,
+  yourIndex: null,
+  gameData: null,
+  yourTurn: false,
+  web3: null,
+  account: null,
+  selectedNFTs: [],
+  userNFTs: [],
+  defendTurnsLeft: 0,
+  defendCooldown: 0
+};
+
+// Audio setup
+const sounds = {
+  attack: new Audio('bite.mp3'),
+  defend: new Audio('defence.mp3'),
+  skill: new Audio('skill.mp3'),
+  ultimate: new Audio('ultimate.mp3'),
+  victory: new Audio('victory.mp3')
+};
+
+// Preload sounds
+Object.values(sounds).forEach(sound => {
+  sound.preload = 'auto';
+  sound.volume = 0.5;
+});
+
+// DOM elements
+const startScreen = document.getElementById('start-screen');
+const nftScreen = document.getElementById('nft-screen');
+const waitingScreen = document.getElementById('waiting-screen');
+const gameScreen = document.getElementById('game-screen');
+const connectionStatus = document.getElementById('connection-status');
+const playerNameInput = document.getElementById('player-name');
+const metamaskBtn = document.getElementById('metamask-btn');
+const guestBtn = document.getElementById('guest-btn');
+const walletStatus = document.getElementById('wallet-status');
+
+// NFT elements
+const nftGrid = document.getElementById('nft-grid');
+const refreshNftsBtn = document.getElementById('refresh-nfts-btn');
+const selectNftsBtn = document.getElementById('select-nfts-btn');
+
+// Game elements
+const yourName = document.getElementById('your-name');
+const enemyName = document.getElementById('enemy-name');
+const yourHp = document.getElementById('your-hp');
+const yourMp = document.getElementById('your-mp');
+const enemyHp = document.getElementById('enemy-hp');
+const enemyMp = document.getElementById('enemy-mp');
+const yourHpBar = document.getElementById('your-hp-bar');
+const yourMpBar = document.getElementById('your-mp-bar');
+const enemyHpBar = document.getElementById('enemy-hp-bar');
+const enemyMpBar = document.getElementById('enemy-mp-bar');
+const yourKryptomon = document.getElementById('your-kryptomon');
+const enemyKryptomon = document.getElementById('enemy-kryptomon');
+const turnInfo = document.getElementById('turn-info');
+const status = document.getElementById('status');
+const yourAvatar = document.getElementById('your-avatar');
+const enemyAvatar = document.getElementById('enemy-avatar');
+const timer = document.getElementById('timer');
+
+// Team elements
+const yourTeam = document.getElementById('your-team');
+const enemyTeam = document.getElementById('enemy-team');
+
+// Control buttons
+const attackBtn = document.getElementById('attack-btn');
+const defendBtn = document.getElementById('defend-btn');
+const skillBtn = document.getElementById('skill-btn');
+const ultimateBtn = document.getElementById('ultimate-btn');
+
+// Initialize
+function init() {
+  console.log('Initializing game...');
   
-  // ERC721 ABI (sadece gerekli fonksiyonlar)
-  const ERC721_ABI = [
-    "function balanceOf(address owner) view returns (uint256)",
-    "function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)",
-    "function tokenURI(uint256 tokenId) view returns (string)",
-    "function ownerOf(uint256 tokenId) view returns (address)"
-  ];
+  // MetaMask button
+  metamaskBtn.addEventListener('click', connectMetaMask);
+  
+  // Guest mode button
+  guestBtn.addEventListener('click', () => {
+    gameState.playerName = playerNameInput.value.trim() || `Guest_${Math.floor(Math.random() * 1000)}`;
+    startGame();
+  });
 
-  // DOM elemanları
-  const metamaskContainer = document.getElementById('metamask-container');
-  const nftSelectionContainer = document.getElementById('nft-selection-container');
-  const connectWalletBtn = document.getElementById('connect-wallet-btn');
-  const connectionStatus = document.getElementById('connection-status');
-  const walletStatus = document.getElementById('wallet-status');
-  const connectedAddress = document.getElementById('connected-address');
-  const gameContainer = document.getElementById('container');
-  const nftGrid = document.getElementById('nft-grid');
-  const selectNFTBtn = document.getElementById('select-nft-btn');
-  const refreshNFTsBtn = document.getElementById('refresh-nfts-btn');
-  const nftLoading = document.getElementById('nft-loading');
-  const nftError = document.getElementById('nft-error');
+  // NFT selection buttons
+  refreshNftsBtn.addEventListener('click', loadUserNFTs);
+  selectNftsBtn.addEventListener('click', startWithNFTs);
 
-  // NFT özelliklerinden oyun statları hesaplama
-  function calculateNFTStats(nft) {
-    // Base stats
-    let health = 150;
-    let attack = 15;
-    let defense = 5;
-    let speed = 10;
+  // Control buttons
+  attackBtn.addEventListener('click', () => sendMove('attack'));
+  defendBtn.addEventListener('click', () => sendMove('defend'));
+  skillBtn.addEventListener('click', () => sendMove('skill'));
+  ultimateBtn.addEventListener('click', () => sendMove('ultimate'));
 
-    // Token ID'den özellik çıkar (deterministic)
-    const tokenIdNum = parseInt(nft.tokenId) || 0;
-    
-    // Token ID bazlı stat hesaplama
-    const healthMod = (tokenIdNum * 7) % 50;      // 0-49 arası health bonus
-    const attackMod = (tokenIdNum * 11) % 25;     // 0-24 arası attack bonus
-    const defenseMod = (tokenIdNum * 13) % 15;    // 0-14 arası defense bonus
-    const speedMod = (tokenIdNum * 17) % 20;      // 0-19 arası speed bonus
-    
-    health += healthMod;
-    attack += Math.floor(attackMod / 2);
-    defense += Math.floor(defenseMod / 3);
-    speed += Math.floor(speedMod / 2);
-
-    // Rarity bonusu (token ID'nin son rakamlarına göre)
-    const rarityValue = tokenIdNum % 100;
-    
-    if (rarityValue >= 95) {
-      // %5 şans ile legendary
-      health += 50;
-      attack += 12;
-      defense += 8;
-      nft.rarity = "Legendary";
-    } else if (rarityValue >= 80) {
-      // %15 şans ile epic  
-      health += 30;
-      attack += 8;
-      defense += 5;
-      nft.rarity = "Epic";
-    } else if (rarityValue >= 50) {
-      // %30 şans ile rare
-      health += 20;
-      attack += 5;
-      defense += 3;
-      nft.rarity = "Rare";
-    } else {
-      nft.rarity = "Common";
+  // Team switching
+  yourTeam.addEventListener('click', (e) => {
+    const slot = e.target.closest('.team-slot');
+    if (slot && !slot.classList.contains('dead') && gameState.yourTurn) {
+      const index = parseInt(slot.dataset.index);
+      switchKryptomon(index);
     }
+  });
 
-    return {
-      health: Math.min(health, 300),
-      attack: Math.min(attack, 50),
-      defense: Math.min(defense, 25),
-      speed: Math.min(speed, 35)
-    };
+  // Check if MetaMask is available
+  if (typeof window.ethereum !== 'undefined') {
+    walletStatus.textContent = 'MetaMask detected!';
+    walletStatus.style.color = '#2ecc71';
+  } else {
+    walletStatus.textContent = 'MetaMask not detected. Guest mode available.';
+    walletStatus.style.color = '#e74c3c';
+  }
+}
+
+// Play sound effect
+function playSound(soundName) {
+  if (sounds[soundName]) {
+    sounds[soundName].currentTime = 0;
+    sounds[soundName].play().catch(e => console.log('Sound play failed:', e));
+  }
+}
+
+// Show damage text
+function showDamageText(target, amount, type = 'damage') {
+  const damageText = document.createElement('div');
+  damageText.className = `damage-text ${type}`;
+  
+  let prefix = '';
+  if (type === 'damage') prefix = '-';
+  else if (type === 'heal') prefix = '+';
+  else if (type === 'mana') prefix = '+';
+  else if (type === 'critical') prefix = 'CRIT -';
+  
+  damageText.textContent = prefix + amount;
+  
+  const rect = target.getBoundingClientRect();
+  damageText.style.position = 'fixed';
+  damageText.style.left = (rect.left + rect.width / 2) + 'px';
+  damageText.style.top = (rect.top + rect.height / 2) + 'px';
+  damageText.style.transform = 'translate(-50%, -50%)';
+  
+  document.body.appendChild(damageText);
+  
+  setTimeout(() => {
+    if (damageText.parentNode) {
+      damageText.parentNode.removeChild(damageText);
+    }
+  }, 2000);
+}
+
+// Switch Kryptomon
+function switchKryptomon(index) {
+  if (!gameState.socket || !gameState.inGame) return;
+  
+  gameState.socket.emit('requestTeamSwitch', {
+    kryptomonIndex: index
+  });
+}
+
+// MetaMask connection
+async function connectMetaMask() {
+  if (typeof window.ethereum === 'undefined') {
+    alert('MetaMask is not installed!');
+    return;
   }
 
-  // MetaMask kontrolü
-  async function checkMetaMask() {
-    if (typeof window.ethereum !== 'undefined') {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      connectWalletBtn.textContent = 'Connect MetaMask';
-      connectWalletBtn.disabled = false;
-      
-      // Önceden bağlı hesapları kontrol et
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0) {
-        currentAccount = accounts[0];
-        signer = provider.getSigner();
-        showNFTSelection();
-      }
-    } else {
-      connectionStatus.textContent = 'MetaMask is not installed. Please install MetaMask to continue.';
-      connectWalletBtn.textContent = 'Install MetaMask';
-      connectWalletBtn.onclick = () => {
-        window.open('https://metamask.io/', '_blank');
-      };
-    }
-  }
+  try {
+    walletStatus.textContent = 'Connecting to MetaMask...';
+    walletStatus.style.color = '#f39c12';
 
-  // MetaMask'a bağlanma fonksiyonu
-  async function connectWallet() {
-    try {
-      connectWalletBtn.disabled = true;
-      connectWalletBtn.textContent = 'Connecting...';
-      
-      const accounts = await window.ethereum.request({
-        method: 'eth_requestAccounts',
-      });
-      
-      if (accounts.length > 0) {
-        currentAccount = accounts[0];
-        signer = provider.getSigner();
-        showNFTSelection();
-      }
-    } catch (error) {
-      console.error('Wallet connection failed:', error);
-      connectionStatus.textContent = 'Connection failed. Please try again.';
-      connectWalletBtn.disabled = false;
-      connectWalletBtn.textContent = 'Connect MetaMask';
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    
+    if (accounts.length === 0) {
+      throw new Error('No accounts found');
     }
-  }
 
-  // NFT seçim ekranını göster
-  async function showNFTSelection() {
-    metamaskContainer.style.display = 'none';
-    nftSelectionContainer.style.display = 'flex';
+    gameState.web3 = new Web3(window.ethereum);
+    gameState.account = accounts[0];
     
-    // Adresi göster
-    const shortAddress = `${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`;
-    connectedAddress.textContent = shortAddress;
-    walletStatus.style.display = 'block';
+    walletStatus.textContent = `Connected: ${gameState.account.substring(0, 6)}...${gameState.account.substring(38)}`;
+    walletStatus.style.color = '#2ecc71';
+
+    gameState.playerName = playerNameInput.value.trim() || `Player_${gameState.account.substring(38)}`;
     
-    // NFT'leri yükle
+    // Load user NFTs
     await loadUserNFTs();
+    showScreen(nftScreen);
+
+  } catch (error) {
+    console.error('MetaMask connection error:', error);
+    walletStatus.textContent = 'Connection failed. Try again.';
+    walletStatus.style.color = '#e74c3c';
+  }
+}
+
+// Load user NFTs
+async function loadUserNFTs() {
+  if (!gameState.web3 || !gameState.account) return;
+
+  try {
+    nftGrid.innerHTML = '<div style="text-align: center; padding: 20px;">Loading your NFTs...</div>';
+    
+    const contract = new gameState.web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+    const balance = await contract.methods.balanceOf(gameState.account).call();
+    
+    if (balance === '0') {
+      nftGrid.innerHTML = '<div style="text-align: center; padding: 20px;">No Kryptomon NFTs found in your wallet.</div>';
+      return;
+    }
+
+    const nfts = [];
+    for (let i = 0; i < Math.min(balance, 20); i++) {
+      try {
+        const tokenId = await contract.methods.tokenOfOwnerByIndex(gameState.account, i).call();
+        nfts.push({
+          tokenId: tokenId,
+          kryptomonId: (parseInt(tokenId) % 20) + 1,
+          name: `Kryptomon #${tokenId}`,
+          image: `kryptomon${(parseInt(tokenId) % 20) + 1}.png`
+        });
+      } catch (error) {
+        console.error('Error loading NFT:', error);
+      }
+    }
+
+    gameState.userNFTs = nfts;
+    displayNFTs(nfts);
+
+  } catch (error) {
+    console.error('Error loading NFTs:', error);
+    nftGrid.innerHTML = '<div style="text-align: center; padding: 20px;">Error loading NFTs. Please try again.</div>';
+  }
+}
+
+// Display NFTs
+function displayNFTs(nfts) {
+  if (nfts.length === 0) {
+    nftGrid.innerHTML = '<div style="text-align: center; padding: 20px;">No Kryptomon NFTs found.</div>';
+    return;
   }
 
-  // Kullanıcının NFT'lerini blockchain'den yükle
-  async function loadUserNFTs() {
-    try {
-      nftLoading.style.display = 'flex';
-      nftError.style.display = 'none';
-      nftGrid.innerHTML = '';
-      userNFTs = [];
+  nftGrid.innerHTML = '';
+  
+  nfts.forEach(nft => {
+    const card = document.createElement('div');
+    card.className = 'nft-card';
+    card.dataset.tokenId = nft.tokenId;
+    
+    card.innerHTML = `
+      <img class="nft-image" src="${nft.image}" alt="${nft.name}" onerror="this.src='kryptomon1.png'">
+      <div class="nft-name">${nft.name}</div>
+      <div style="font-size: 10px; opacity: 0.7;">Token ID: ${nft.tokenId}</div>
+    `;
+    
+    card.addEventListener('click', () => selectNFT(card, nft));
+    nftGrid.appendChild(card);
+  });
+}
+
+// Select NFT
+function selectNFT(card, nft) {
+  if (card.classList.contains('selected')) {
+    card.classList.remove('selected');
+    gameState.selectedNFTs = gameState.selectedNFTs.filter(n => n.tokenId !== nft.tokenId);
+  } else if (gameState.selectedNFTs.length < 3) {
+    card.classList.add('selected');
+    gameState.selectedNFTs.push(nft);
+  } else {
+    alert('You can only select 3 Kryptomon for battle!');
+  }
+
+  selectNftsBtn.disabled = gameState.selectedNFTs.length !== 3;
+}
+
+// Start with NFTs
+function startWithNFTs() {
+  if (gameState.selectedNFTs.length !== 3) {
+    alert('Please select exactly 3 Kryptomon!');
+    return;
+  }
+  
+  startGame();
+}
+
+// Start game
+function startGame() {
+  console.log('Starting game for:', gameState.playerName);
+  showWaitingScreen();
+  connectToServer();
+}
+
+// Connect to server
+function connectToServer() {
+  updateConnectionStatus('connecting');
+  
+  const serverUrl = 'https://pvpbackend.onrender.com';
+  console.log('Connecting to:', serverUrl);
+  
+  gameState.socket = io(serverUrl, {
+    withCredentials: true,
+    timeout: 15000,
+    transports: ['websocket', 'polling']
+  });
+
+  gameState.socket.on('connect', () => {
+    console.log('✅ Connected to server');
+    gameState.connected = true;
+    updateConnectionStatus('connected');
+    
+    // Join game
+    gameState.socket.emit('joinGame', {
+      username: gameState.playerName,
+      selectedNFTs: gameState.selectedNFTs,
+      isGuest: gameState.selectedNFTs.length === 0
+    });
+  });
+
+  gameState.socket.on('disconnect', () => {
+    console.log('❌ Disconnected from server');
+    gameState.connected = false;
+    updateConnectionStatus('disconnected');
+  });
+
+  gameState.socket.on('connect_error', (error) => {
+    console.error('❌ Connection error:', error);
+    updateConnectionStatus('disconnected');
+    alert('Could not connect to server. Please try again.');
+  });
+
+  gameState.socket.on('waitingForOpponent', () => {
+    console.log('⏳ Waiting for opponent...');
+    document.getElementById('waiting-name').textContent = gameState.playerName;
+  });
+
+  gameState.socket.on('gameStartCountdown', (data) => {
+    console.log('⏰ Game starting in:', data.countdown);
+    document.querySelector('#waiting-screen h2').textContent = `Game Starting in ${data.countdown}...`;
+  });
+
+  gameState.socket.on('gameStart', (data) => {
+    console.log('🎮 Game started:', data);
+    gameState.inGame = true;
+    gameState.yourIndex = data.yourIndex;
+    gameState.gameData = data.gameRoom;
+    showGameScreen();
+    updateUI(data.gameRoom);
+  });
+
+  gameState.socket.on('timerUpdate', (data) => {
+    timer.textContent = `${data.timeLeft}s`;
+    if (data.timeLeft <= 5) {
+      timer.style.color = '#e74c3c';
+    } else {
+      timer.style.color = '#FFD700';
+    }
+  });
+
+  gameState.socket.on('turnResult', (data) => {
+    console.log('🎯 Turn result:', data);
+    gameState.gameData = data.gameRoom;
+    
+    const result = data.result;
+    
+    // Play sound effect
+    if (result.soundEffect) {
+      playSound(result.soundEffect);
+    }
+    
+    // Show animations
+    if (result.playerIndex === gameState.yourIndex) {
+      // Your move
+      yourKryptomon.classList.add(result.moveType);
+      setTimeout(() => yourKryptomon.classList.remove(result.moveType), 
+        result.moveType === 'ultimate' ? 3000 : result.moveType === 'skill' ? 2000 : 1500);
+    } else {
+      // Enemy move
+      enemyKryptomon.classList.add(result.moveType);
+      setTimeout(() => enemyKryptomon.classList.remove(result.moveType), 
+        result.moveType === 'ultimate' ? 3000 : result.moveType === 'skill' ? 2000 : 1500);
+    }
+    
+    // Show damage/heal/mana text
+    if (result.damageInfo) {
+      const info = result.damageInfo;
+      let targetElement;
       
-      console.log('Loading NFTs for address:', currentAccount);
-      console.log('Contract address:', NFT_CONTRACT_ADDRESS);
-      
-      // NFT kontratına bağlan
-      const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, ERC721_ABI, provider);
-      
-      // Kullanıcının sahip olduğu NFT sayısını al
-      const balance = await nftContract.balanceOf(currentAccount);
-      console.log('NFT Balance:', balance.toString());
-      
-      if (balance.eq(0)) {
-        throw new Error('You don\'t own any NFTs from this collection');
+      if (info.target === 'self') {
+        targetElement = result.playerIndex === gameState.yourIndex ? yourKryptomon : enemyKryptomon;
+      } else {
+        targetElement = result.playerIndex === gameState.yourIndex ? enemyKryptomon : yourKryptomon;
       }
       
-      // Her NFT için bilgileri al
-      for (let i = 0; i < balance.toNumber() && i < 20; i++) {
-        try {
-          // Token ID'yi al
-          const tokenId = await nftContract.tokenOfOwnerByIndex(currentAccount, i);
-          console.log(`Token ${i}:`, tokenId.toString());
-          
-          // Token URI'yi al
-          let tokenURI = '';
-          let metadata = null;
-          
-          try {
-            tokenURI = await nftContract.tokenURI(tokenId);
-            console.log(`Token URI ${tokenId}:`, tokenURI);
-            
-            // Metadata'yı al
-            if (tokenURI) {
-              // IPFS linklerini HTTP'ye çevir
-              if (tokenURI.startsWith('ipfs://')) {
-                tokenURI = tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/');
-              }
-              
-              const metadataResponse = await fetch(tokenURI);
-              metadata = await metadataResponse.json();
-            }
-          } catch (uriError) {
-            console.log('Token URI error:', uriError);
-          }
-          
-          // NFT objesini oluştur
-          const nft = {
-            tokenId: tokenId.toString(),
-            name: metadata?.name || `NFT #${tokenId.toString()}`,
-            description: metadata?.description || '',
-            image: metadata?.image || `https://via.placeholder.com/150?text=NFT%20${tokenId.toString()}`,
-            traits: metadata?.attributes || []
-          };
-          
-          // IPFS image linklerini düzelt
-          if (nft.image.startsWith('ipfs://')) {
-            nft.image = nft.image.replace('ipfs://', 'https://ipfs.io/ipfs/');
-          }
-          
-          userNFTs.push(nft);
-          
-        } catch (tokenError) {
-          console.error(`Error loading token ${i}:`, tokenError);
-        }
+      if (info.isHeal) {
+        showDamageText(targetElement, info.damage, 'heal');
+      } else if (info.isMana) {
+        showDamageText(targetElement, info.damage, 'mana');
+      } else if (info.isCritical) {
+        showDamageText(targetElement, info.damage, 'critical');
+      } else {
+        showDamageText(targetElement, info.damage, 'damage');
       }
-      
-      if (userNFTs.length === 0) {
-        throw new Error('Could not load any NFT metadata');
-      }
-      
-      console.log('Loaded NFTs:', userNFTs);
-      displayNFTs();
-      
-    } catch (error) {
-      console.error('Error loading NFTs:', error);
-      nftError.textContent = `Error: ${error.message}. Creating demo NFTs...`;
-      nftError.style.display = 'block';
-      
-      // Demo NFT'ler oluştur
+    }
+    
+    // Add defend effect
+    if (result.moveType === 'defend') {
+      const defendEffect = document.createElement('div');
+      defendEffect.className = 'defend-effect';
+      const targetKryptomon = result.playerIndex === gameState.yourIndex ? yourKryptomon : enemyKryptomon;
+      targetKryptomon.appendChild(defendEffect);
       setTimeout(() => {
-        createDemoNFTs();
+        if (defendEffect.parentNode) {
+          defendEffect.parentNode.removeChild(defendEffect);
+        }
       }, 2000);
-      
-    } finally {
-      nftLoading.style.display = 'none';
     }
+    
+    updateUI(data.gameRoom);
+  });
+
+  gameState.socket.on('teamSwitched', (data) => {
+    console.log('🔄 Team switched:', data);
+    gameState.gameData = data.gameRoom;
+    updateUI(data.gameRoom);
+  });
+
+  gameState.socket.on('turnSkipped', (data) => {
+    console.log('⏭️ Turn skipped:', data);
+    gameState.gameData = data.gameRoom;
+    updateUI(data.gameRoom);
+  });
+
+  gameState.socket.on('gameEnd', (data) => {
+    console.log('🏁 Game ended:', data);
+    const isWinner = data.winner === gameState.yourIndex;
+    
+    if (isWinner) {
+      playSound('victory');
+    }
+    
+    setTimeout(() => {
+      alert(isWinner ? '🎉 You Won!' : '😞 You Lost!');
+      resetGame();
+    }, 1000);
+  });
+
+  gameState.socket.on('error', (error) => {
+    console.error('🚨 Game error:', error);
+    alert('Error: ' + error.message);
+  });
+}
+
+// Send move to server
+function sendMove(moveType) {
+  if (!gameState.socket || !gameState.inGame || !gameState.yourTurn) {
+    console.log('❌ Cannot send move:', {
+      socket: !!gameState.socket,
+      inGame: gameState.inGame,
+      yourTurn: gameState.yourTurn
+    });
+    return;
   }
 
-  // Alternative API'ler ile NFT yükleme
-  async function loadNFTsAlternative() {
-    try {
-      // Alchemy API (ücretsiz tier)
-      const alchemyResponse = await fetch(
-        `https://eth-mainnet.g.alchemy.com/v2/demo/getNFTs/?owner=${currentAccount}&contractAddresses[]=${NFT_CONTRACT_ADDRESS}`
-      );
+  console.log('📤 Sending move:', moveType);
+  gameState.socket.emit('battleMove', { moveType });
+}
+
+// Update UI
+function updateUI(gameRoom) {
+  if (!gameRoom || gameState.yourIndex === null) {
+    console.log('❌ Missing game data:', gameRoom, gameState.yourIndex);
+    return;
+  }
+
+  const yourData = gameRoom.players[gameState.yourIndex];
+  const enemyData = gameRoom.players[1 - gameState.yourIndex];
+  
+  // Update names
+  yourName.textContent = yourData.username;
+  enemyName.textContent = enemyData.username;
+  
+  // Get current Kryptomon
+  const yourCurrentKryptomon = yourData.team[yourData.currentKryptomon];
+  const enemyCurrentKryptomon = enemyData.team[enemyData.currentKryptomon];
+  
+  if (yourCurrentKryptomon && enemyCurrentKryptomon) {
+    // Update HP/MP displays
+    yourHp.textContent = yourCurrentKryptomon.hp;
+    yourMp.textContent = yourCurrentKryptomon.mana;
+    enemyHp.textContent = enemyCurrentKryptomon.hp;
+    enemyMp.textContent = enemyCurrentKryptomon.mana;
+    
+    // Update bars
+    yourHpBar.style.width = (yourCurrentKryptomon.hp / yourCurrentKryptomon.maxHp * 100) + '%';
+    yourMpBar.style.width = (yourCurrentKryptomon.mana / yourCurrentKryptomon.maxMana * 100) + '%';
+    enemyHpBar.style.width = (enemyCurrentKryptomon.hp / enemyCurrentKryptomon.maxHp * 100) + '%';
+    enemyMpBar.style.width = (enemyCurrentKryptomon.mana / enemyCurrentKryptomon.maxMana * 100) + '%';
+    
+    // Update Kryptomon images
+    const yourImg = yourKryptomon.querySelector('img');
+    const enemyImg = enemyKryptomon.querySelector('img');
+    
+    if (yourImg) {
+      yourImg.src = `kryptomon${yourCurrentKryptomon.sprite}.png`;
+    }
+    if (enemyImg) {
+      enemyImg.src = `kryptomon${enemyCurrentKryptomon.sprite}.png`;
+    }
+  }
+  
+  // Update team displays
+  updateTeamDisplay(yourData, yourTeam, false);
+  updateTeamDisplay(enemyData, enemyTeam, true);
+  
+  // Update turn
+  gameState.yourTurn = gameRoom.currentTurn === gameState.yourIndex;
+  turnInfo.textContent = gameState.yourTurn ? 'Your Turn' : 'Enemy Turn';
+  status.textContent = gameState.yourTurn ? 'Choose your move!' : 'Waiting for enemy...';
+  
+  // Update cooldowns
+  if (gameState.defendCooldown > 0) {
+    gameState.defendCooldown--;
+  }
+  if (gameState.defendTurnsLeft > 0) {
+    gameState.defendTurnsLeft--;
+  }
+  
+  // Update buttons
+  updateButtons();
+}
+
+// Update team display
+function updateTeamDisplay(playerData, teamElement, isEnemy) {
+  const slots = teamElement.querySelectorAll('.team-slot');
+  
+  slots.forEach((slot, index) => {
+    const kryptomon = playerData.team[index];
+    const img = slot.querySelector('img');
+    
+    if (img && kryptomon) {
+      img.src = `kryptomon${kryptomon.sprite}.png`;
+    }
+    
+    // Update status
+    slot.classList.remove('active', 'dead');
+    
+    if (!kryptomon.isAlive) {
+      slot.classList.add('dead');
+    } else if (index === playerData.currentKryptomon) {
+      slot.classList.add('active');
+    }
+  });
+}
+
+// Update button states
+function updateButtons() {
+  const disabled = !gameState.yourTurn || !gameState.inGame;
+  
+  if (gameState.gameData && gameState.yourIndex !== null) {
+    const yourData = gameState.gameData.players[gameState.yourIndex];
+    const currentKryptomon = yourData.team[yourData.currentKryptomon];
+    
+    if (currentKryptomon) {
+      // Attack: always available when it's your turn
+      attackBtn.disabled = disabled;
       
-      if (alchemyResponse.ok) {
-        const data = await alchemyResponse.json();
-        if (data.ownedNfts && data.ownedNfts.length > 0) {
-          userNFTs = data.ownedNfts.map(nft => ({
-            tokenId: parseInt(nft.id.tokenId, 16).toString(),
-            name: nft.metadata?.name || `NFT #${parseInt(nft.id.tokenId, 16)}`,
-            image: nft.metadata?.image || `https://via.placeholder.com/150?text=NFT`,
-            traits: nft.metadata?.attributes || []
-          }));
-          
-          displayNFTs();
-          return;
-        }
+      // Defend: free but has cooldown
+      defendBtn.disabled = disabled || gameState.defendCooldown > 0;
+      if (gameState.defendCooldown > 0) {
+        defendBtn.querySelector('small').textContent = `Cooldown: ${gameState.defendCooldown}`;
+      } else {
+        defendBtn.querySelector('small').textContent = 'Free';
       }
-    } catch (error) {
-      console.log('Alternative API error:', error);
-    }
-    
-    // Tüm API'ler başarısız olursa demo NFT'ler
-    createDemoNFTs();
-  }
-
-  // Demo NFT'ler oluştur
-  function createDemoNFTs() {
-    const demoCount = 5;
-    userNFTs = [];
-    
-    for (let i = 1; i <= demoCount; i++) {
-      const nft = {
-        tokenId: i.toString(),
-        name: `Demo NFT #${i}`,
-        image: `https://picsum.photos/150/150?random=${i}`,
-        traits: [
-          { trait_type: "Strength", value: (Math.random() * 100).toFixed(0) },
-          { trait_type: "Speed", value: (Math.random() * 100).toFixed(0) },
-          { trait_type: "Power", value: (Math.random() * 100).toFixed(0) }
-        ]
-      };
-      userNFTs.push(nft);
-    }
-    
-    console.log('Created demo NFTs:', userNFTs);
-    displayNFTs();
-  }
-
-  // NFT'leri ekranda göster
-  function displayNFTs() {
-    nftGrid.innerHTML = '';
-    
-    userNFTs.forEach((nft, index) => {
-      const stats = calculateNFTStats(nft);
       
-      const nftCard = document.createElement('div');
-      nftCard.className = 'nft-card';
-      nftCard.dataset.index = index;
+      // Skill: costs 2 mana
+      skillBtn.disabled = disabled || currentKryptomon.mana < 2;
       
-      nftCard.innerHTML = `
-        <img src="${nft.image}" alt="${nft.name}" class="nft-image" 
-             onerror="this.src='https://via.placeholder.com/150?text=NFT%20${nft.tokenId}'" />
-        <div class="nft-info">
-          <div style="font-weight: bold; margin-bottom: 5px; font-size: 12px;">${nft.name}</div>
-          <div style="font-size: 10px; color: #aaa; margin-bottom: 5px;">${nft.rarity || 'Common'}</div>
-          <div class="nft-stats">
-            <span class="stat health-stat">HP: ${stats.health}</span>
-            <span class="stat attack-stat">ATK: ${stats.attack}</span>
-          </div>
-          <div class="nft-stats">
-            <span class="stat defense-stat">DEF: ${stats.defense}</span>
-            <span class="stat speed-stat">SPD: ${stats.speed}</span>
-          </div>
-        </div>
-      `;
-      
-      nftCard.addEventListener('click', () => selectNFTCard(index));
-      nftGrid.appendChild(nftCard);
-    });
-    
-    nftError.style.display = 'none';
-  }
-
-  // NFT kartı seçimi
-  function selectNFTCard(index) {
-    // Önceki seçimi temizle
-    document.querySelectorAll('.nft-card').forEach(card => {
-      card.classList.remove('selected');
-    });
-    
-    // Yeni seçimi işaretle
-    const selectedCard = document.querySelector(`[data-index="${index}"]`);
-    selectedCard.classList.add('selected');
-    
-    selectedNFT = userNFTs[index];
-    selectNFTBtn.disabled = false;
-  }
-
-  // NFT seçimini onayla ve oyuna başla
-  function confirmNFTSelection() {
-    if (selectedNFT) {
-      nftSelectionContainer.style.display = 'none';
-      gameContainer.style.display = 'flex';
-      initializeGame();
+      // Ultimate: costs 6 mana and can only be used once
+      ultimateBtn.disabled = disabled || currentKryptomon.mana < 6 || currentKryptomon.ultimateUsed;
     }
+  } else {
+    attackBtn.disabled = disabled;
+    defendBtn.disabled = disabled;
+    skillBtn.disabled = disabled;
+    ultimateBtn.disabled = disabled;
   }
+}
 
-  // NFT'leri yenile
-  async function refreshNFTs() {
-    selectedNFT = null;
-    selectNFTBtn.disabled = true;
-    await loadUserNFTs();
+// Screen management
+function showScreen(screen) {
+  [startScreen, nftScreen, waitingScreen, gameScreen].forEach(s => s.classList.add('hidden'));
+  screen.classList.remove('hidden');
+}
+
+function showWaitingScreen() {
+  showScreen(waitingScreen);
+}
+
+function showGameScreen() {
+  showScreen(gameScreen);
+}
+
+function resetGame() {
+  gameState.inGame = false;
+  gameState.yourIndex = null;
+  gameState.gameData = null;
+  gameState.yourTurn = false;
+  gameState.defendTurnsLeft = 0;
+  gameState.defendCooldown = 0;
+  
+  if (gameState.socket) {
+    gameState.socket.disconnect();
+    gameState.socket = null;
   }
+  showScreen(startScreen);
+}
 
-  // Hesap değişikliği dinleyicisi
-  if (window.ethereum) {
-    window.ethereum.on('accountsChanged', (accounts) => {
-      if (accounts.length === 0) {
-        currentAccount = null;
-        selectedNFT = null;
-        walletStatus.style.display = 'none';
-        gameContainer.style.display = 'none';
-        nftSelectionContainer.style.display = 'none';
-        metamaskContainer.style.display = 'flex';
-        if (socket) {
-          socket.disconnect();
-        }
-      } else if (accounts[0] !== currentAccount) {
-        currentAccount = accounts[0];
-        selectedNFT = null;
-        signer = provider.getSigner();
-        showNFTSelection();
-      }
-    });
-  }
+// Connection status
+function updateConnectionStatus(status) {
+  connectionStatus.className = `connection-status ${status}`;
+  connectionStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+}
 
-  // Event listeners
-  window.addEventListener('load', checkMetaMask);
-  connectWalletBtn.addEventListener('click', connectWallet);
-  selectNFTBtn.addEventListener('click', confirmNFTSelection);
-  refreshNFTsBtn.addEventListener('click', refreshNFTs);
-
-  // Oyun başlatma ve diğer fonksiyonlar aynı kalıyor...
-  function initializeGame() {
-    // Socket ve oyun kodu aynı kalıyor
-    console.log('Starting game with NFT:', selectedNFT);
-    // ... oyun kodları ...
-  }
+// Start the game
+init();
+console.log('🎮 Game initialized!');
 </script>
 </body>
 </html>
