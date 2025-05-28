@@ -59,7 +59,7 @@ const io = socketIo(server, {
 
 // Telegram Bot integration
 const TelegramBot = require('node-telegram-bot-api');
-const BOT_TOKEN = '8038231934:AAEx0gp2jt61vHlPvt-KiQGwNpI-frnqRAg';
+
 
 let bot;
 try {
