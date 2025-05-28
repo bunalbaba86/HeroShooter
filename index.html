@@ -1101,16 +1101,30 @@ function startGame() {
 }
 
 // Connect to server
+// Connect to server
 function connectToServer() {
   updateConnectionStatus('connecting');
   
-  const serverUrl = 'https://pvpbackend.onrender.com';
-  console.log('Connecting to:', serverUrl);
+  // Aynı domain'i kullan (Vercel)
+  const serverUrl = window.location.origin;
+  console.log('🔌 Connecting to:', serverUrl);
   
   gameState.socket = io(serverUrl, {
     withCredentials: true,
     timeout: 15000,
     transports: ['websocket', 'polling']
+  });
+  gameState.socket.on('connect', () => {
+    console.log('✅ Connected to Vercel server');
+    gameState.connected = true;
+    updateConnectionStatus('connected');
+    
+    // Join game with Telegram user data
+    gameState.socket.emit('joinGame', {
+      username: gameState.playerName,
+      telegramUserId: gameState.telegramUserId,
+      isTelegramUser: isTelegramWebApp
+    });
   });
 
   gameState.socket.on('connect', () => {
