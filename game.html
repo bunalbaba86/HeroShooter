@@ -987,10 +987,14 @@ function updateGameUI(gameRoom) {
 
 function updateTeamDisplay(teamId, team, currentIndex) {
   const teamElement = document.getElementById(teamId);
+  if (!teamElement) return;
+  
   const slots = teamElement.querySelectorAll('.kryptomon-slot');
   
   slots.forEach((slot, index) => {
     const kryptomon = team[index];
+    if (!kryptomon) return;
+    
     slot.classList.remove('active', 'dead');
     
     if (index === currentIndex) {
@@ -1056,27 +1060,41 @@ guestModeBtn.addEventListener('click', () => {
   gameState.playerName = name;
   gameState.isGuest = true;
   
-  if (!gameState.connected) {
+  console.log('Joining game as guest:', name);
+  
+  if (!socket) {
     initializeSocket();
+    
+    // Wait for connection then join game
+    const checkConnection = setInterval(() => {
+      if (gameState.connected && socket) {
+        clearInterval(checkConnection);
+        console.log('Socket connected, joining game...');
+        socket.emit('joinGame', {
+          username: name,
+          isGuest: true
+        });
+      }
+    }, 100);
+    
+    // Timeout after 10 seconds
+    setTimeout(() => {
+      clearInterval(checkConnection);
+      if (!gameState.connected) {
+        console.error('Failed to connect within 10 seconds');
+        updateConnectionStatus('error');
+      }
+    }, 10000);
+  } else if (gameState.connected) {
+    console.log('Already connected, joining game...');
+    socket.emit('joinGame', {
+      username: name,
+      isGuest: true
+    });
   }
-  
-  // Wait for connection then join game
-  const tryJoin = () => {
-    if (gameState.connected) {
-      console.log('Joining game as guest:', name);
-      socket.emit('joinGame', {
-        username: name,
-        isGuest: true
-      });
-    } else {
-      setTimeout(tryJoin, 500);
-    }
-  };
-  
-  tryJoin();
 });
 
-// Button event listeners
+// Battle move event listeners
 attackBtn.addEventListener('click', () => sendBattleMove('attack'));
 defendBtn.addEventListener('click', () => sendBattleMove('defend'));
 skillBtn.addEventListener('click', () => sendBattleMove('skill'));
@@ -1089,20 +1107,14 @@ surrenderBtn.addEventListener('click', () => {
   }
 });
 
-// Initialize connection on page load
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('Page loaded, ready to connect');
-  // Don't auto-connect, wait for user action
-});
-
-// Add click handlers for team switching
+// Team slot click handlers
 document.addEventListener('click', (e) => {
   if (e.target.closest('.kryptomon-slot')) {
     const slot = e.target.closest('.kryptomon-slot');
     const teamElement = slot.closest('.kryptomon-team');
     
     // Only allow switching your own team
-    if (teamElement.id === 'your-team') {
+    if (teamElement && teamElement.id === 'your-team') {
       const index = parseInt(slot.dataset.index);
       const gameRoom = gameState.gameRoom;
       
@@ -1110,7 +1122,9 @@ document.addEventListener('click', (e) => {
         const yourData = gameRoom.players[gameState.yourIndex];
         const targetKryptomon = yourData.team[index];
         
+        // Check if we can switch to this Kryptomon
         if (targetKryptomon && targetKryptomon.isAlive && index !== yourData.currentKryptomon) {
+          console.log('Switching to Kryptomon index:', index);
           socket.emit('battleMove', {
             moveType: 'switchKryptomon',
             targetKryptomonIndex: index
@@ -1121,7 +1135,10 @@ document.addEventListener('click', (e) => {
   }
 });
 
-console.log('Kryptomon Battle Arena initialized!');
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Page loaded, ready to start');
+});
 </script>
 </body>
 </html>
