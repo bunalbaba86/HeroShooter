@@ -274,26 +274,27 @@
     transform: translate(-50%, -50%);
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     width: 90%;
-    max-width: 400px;
+    max-width: 350px;
     height: 200px;
+    gap: 50px;
   }
 
   .kryptomon {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
     border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid #FFD700;
     transition: all 0.3s ease;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     position: relative;
     overflow: hidden;
+    cursor: pointer;
   }
 
   .kryptomon img {
@@ -303,14 +304,14 @@
     border-radius: 12px;
   }
 
-  .kryptomon.enemy {
+  .kryptomon.enemy img {
     transform: scaleX(-1);
   }
 
   /* Damage Text */
   .damage-text {
     position: absolute;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
     pointer-events: none;
     z-index: 200;
@@ -324,12 +325,17 @@
 
   .damage-text.critical {
     color: #FFD700;
-    font-size: 32px;
+    font-size: 28px;
     text-shadow: 0 0 10px #FFD700;
   }
 
   .damage-text.heal {
     color: #2ecc71;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  }
+
+  .damage-text.mana {
+    color: #3498db;
     text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
   }
 
@@ -339,40 +345,41 @@
     100% { opacity: 0; transform: translateY(-80px) scale(0.8); }
   }
 
-  /* Animations */
+  /* Enhanced Animations */
   .kryptomon.attacking {
-    animation: attackAnim 1.5s ease-in-out;
+    animation: attackBite 1.5s ease-in-out;
   }
 
   .kryptomon.defending {
-    animation: defendAnim 1.5s ease-in-out;
+    animation: defendShield 1.5s ease-in-out;
   }
 
   .kryptomon.skill {
-    animation: skillAnim 2s ease-in-out;
+    animation: skillGlow 2s ease-in-out;
   }
 
   .kryptomon.ultimate {
-    animation: ultimateAnim 3s ease-in-out;
+    animation: ultimateBlast 3s ease-in-out;
   }
 
-  @keyframes attackAnim {
-    0% { transform: translateX(0) scale(1); filter: brightness(1); }
-    25% { transform: translateX(20px) scale(1.1); filter: brightness(1.3) hue-rotate(30deg); }
-    50% { transform: translateX(30px) scale(1.15); filter: brightness(1.5) hue-rotate(60deg); }
-    75% { transform: translateX(20px) scale(1.1); filter: brightness(1.3) hue-rotate(30deg); }
-    100% { transform: translateX(0) scale(1); filter: brightness(1); }
+  @keyframes attackBite {
+    0% { transform: translateX(0) scale(1) rotate(0deg); }
+    20% { transform: translateX(15px) scale(1.1) rotate(5deg); }
+    40% { transform: translateX(25px) scale(1.2) rotate(-3deg); }
+    60% { transform: translateX(30px) scale(1.15) rotate(2deg); }
+    80% { transform: translateX(15px) scale(1.05) rotate(-1deg); }
+    100% { transform: translateX(0) scale(1) rotate(0deg); }
   }
 
-  @keyframes defendAnim {
-    0% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db); }
-    25% { transform: scale(0.9); filter: drop-shadow(0 0 20px #3498db); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 30px #3498db); }
-    75% { transform: scale(0.95); filter: drop-shadow(0 0 20px #3498db); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db); }
+  @keyframes defendShield {
+    0% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db) brightness(1); }
+    25% { transform: scale(0.95); filter: drop-shadow(0 0 15px #3498db) brightness(1.3); }
+    50% { transform: scale(1.08); filter: drop-shadow(0 0 25px #3498db) brightness(1.5); }
+    75% { transform: scale(0.98); filter: drop-shadow(0 0 15px #3498db) brightness(1.3); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 0px #3498db) brightness(1); }
   }
 
-  @keyframes skillAnim {
+  @keyframes skillGlow {
     0% { transform: scale(1) rotate(0deg); filter: brightness(1) hue-rotate(0deg); }
     20% { transform: scale(1.1) rotate(5deg); filter: brightness(1.4) hue-rotate(60deg); }
     40% { transform: scale(1.2) rotate(-5deg); filter: brightness(1.6) hue-rotate(120deg); }
@@ -381,7 +388,7 @@
     100% { transform: scale(1) rotate(0deg); filter: brightness(1) hue-rotate(360deg); }
   }
 
-  @keyframes ultimateAnim {
+  @keyframes ultimateBlast {
     0% { transform: scale(1) rotate(0deg); filter: brightness(1) saturate(1) hue-rotate(0deg); }
     10% { transform: scale(1.2) rotate(15deg); filter: brightness(2) saturate(2) hue-rotate(60deg); }
     20% { transform: scale(1.4) rotate(-20deg); filter: brightness(2.5) saturate(2.5) hue-rotate(120deg); }
@@ -395,32 +402,32 @@
   /* Controls - Mobile Bottom */
   .controls {
     position: absolute;
-    bottom: 20px;
+    bottom: 15px;
     left: 50%;
     transform: translateX(-50%);
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 8px;
     width: 95%;
-    max-width: 350px;
+    max-width: 320px;
   }
 
   .control-btn {
-    padding: 12px 8px;
-    font-size: 12px;
+    padding: 10px 6px;
+    font-size: 11px;
     font-weight: bold;
     border: none;
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
     background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
-    min-height: 55px;
+    min-height: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
     border: 2px solid rgba(255,255,255,0.3);
     backdrop-filter: blur(5px);
   }
@@ -436,14 +443,14 @@
   }
 
   .control-btn img {
-    width: 20px;
-    height: 20px;
-    margin-bottom: 2px;
+    width: 16px;
+    height: 16px;
+    margin-bottom: 1px;
   }
 
   .control-btn small {
-    font-size: 9px;
-    opacity: 0.8;
+    font-size: 8px;
+    opacity: 0.9;
   }
 
   .btn-attack {
@@ -460,14 +467,6 @@
 
   .btn-ultimate {
     background: linear-gradient(135deg, #f39c12, #e67e22);
-  }
-
-  .btn-mana {
-    background: linear-gradient(135deg, #27ae60, #2ecc71);
-  }
-
-  .btn-surrender {
-    background: linear-gradient(135deg, #95a5a6, #7f8c8d);
   }
 
   /* Status Message */
@@ -523,8 +522,8 @@
   }
 
   .team-slot {
-    width: 40px;
-    height: 40px;
+    width: 35px;
+    height: 35px;
     border: 2px solid rgba(255,255,255,0.3);
     border-radius: 8px;
     background: rgba(0,0,0,0.7);
@@ -544,6 +543,7 @@
   .team-slot.dead {
     opacity: 0.3;
     border-color: #e74c3c;
+    cursor: not-allowed;
   }
 
   .team-slot img {
@@ -557,11 +557,12 @@
   @media (max-height: 600px) {
     .battle-arena {
       height: 150px;
+      gap: 40px;
     }
     
     .kryptomon {
-      width: 120px;
-      height: 120px;
+      width: 100px;
+      height: 100px;
     }
     
     .controls {
@@ -570,24 +571,41 @@
     
     .control-btn {
       min-height: 45px;
-      font-size: 11px;
+      font-size: 10px;
     }
   }
 
   @media (max-width: 400px) {
+    .battle-arena {
+      gap: 30px;
+    }
+    
     .kryptomon {
       width: 110px;
       height: 110px;
-    }
-    
-    .battle-arena {
-      width: 95%;
     }
     
     .stat-panel {
       min-width: 47%;
       padding: 6px 8px;
     }
+  }
+
+  /* Defend Effect */
+  .defend-effect {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #3498db;
+    border-radius: 15px;
+    animation: shieldPulse 2s ease-in-out;
+    pointer-events: none;
+  }
+
+  @keyframes shieldPulse {
+    0% { opacity: 0; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1); }
   }
 </style>
 </head>
@@ -640,10 +658,10 @@
           <img class="player-avatar" id="your-avatar" src="you.jpg" alt="You">
           <span id="your-name">You</span>
         </h3>
-        <div class="stat-text">HP: <span id="your-hp">100</span>/100</div>
+        <div class="stat-text">HP: <span id="your-hp">100</span></div>
         <div class="stat-bar"><div class="stat-fill hp-fill" id="your-hp-bar" style="width: 100%"></div></div>
-        <div class="stat-text">MP: <span id="your-mp">100</span>/100</div>
-        <div class="stat-bar"><div class="stat-fill mp-fill" id="your-mp-bar" style="width: 100%"></div></div>
+        <div class="stat-text">MP: <span id="your-mp">0</span></div>
+        <div class="stat-bar"><div class="stat-fill mp-fill" id="your-mp-bar" style="width: 0%"></div></div>
       </div>
 
       <div class="stat-panel">
@@ -651,10 +669,10 @@
           <img class="player-avatar" id="enemy-avatar" src="enemy.jpg" alt="Enemy">
           <span id="enemy-name">Enemy</span>
         </h3>
-        <div class="stat-text">HP: <span id="enemy-hp">100</span>/100</div>
+        <div class="stat-text">HP: <span id="enemy-hp">100</span></div>
         <div class="stat-bar"><div class="stat-fill hp-fill" id="enemy-hp-bar" style="width: 100%"></div></div>
-        <div class="stat-text">MP: <span id="enemy-mp">100</span>/100</div>
-        <div class="stat-bar"><div class="stat-fill mp-fill" id="enemy-mp-bar" style="width: 100%"></div></div>
+        <div class="stat-text">MP: <span id="enemy-mp">0</span></div>
+        <div class="stat-bar"><div class="stat-fill mp-fill" id="enemy-mp-bar" style="width: 0%"></div></div>
       </div>
     </div>
 
@@ -702,35 +720,25 @@
       <button class="control-btn btn-attack" id="attack-btn">
         <img src="attack.png" alt="Attack">
         ⚔️ Attack
-        <small>-10 MP</small>
+        <small>+2 MP</small>
       </button>
 
       <button class="control-btn btn-defend" id="defend-btn">
         <img src="defence.png" alt="Defend">
         🛡️ Defend
-        <small>-5 MP</small>
+        <small>Free</small>
       </button>
 
       <button class="control-btn btn-skill" id="skill-btn">
         <img src="skill.png" alt="Skill">
         ✨ Skill
-        <small>-20 MP</small>
+        <small>-2 MP</small>
       </button>
 
       <button class="control-btn btn-ultimate" id="ultimate-btn">
         <img src="hydra.png" alt="Ultimate">
         💥 Ultimate
-        <small>-40 MP</small>
-      </button>
-
-      <button class="control-btn btn-mana" id="mana-btn">
-        <img src="mana.png" alt="Mana">
-        🔮 Restore
-        <small>+25 MP</small>
-      </button>
-
-      <button class="control-btn btn-surrender" id="surrender-btn">
-        🏳️ Surrender
+        <small>-6 MP</small>
       </button>
     </div>
   </div>
@@ -776,7 +784,9 @@ const gameState = {
   web3: null,
   account: null,
   selectedNFTs: [],
-  userNFTs: []
+  userNFTs: [],
+  defendTurnsLeft: 0,
+  defendCooldown: 0
 };
 
 // Audio setup
@@ -827,14 +837,17 @@ const turnInfo = document.getElementById('turn-info');
 const status = document.getElementById('status');
 const yourAvatar = document.getElementById('your-avatar');
 const enemyAvatar = document.getElementById('enemy-avatar');
+const timer = document.getElementById('timer');
+
+// Team elements
+const yourTeam = document.getElementById('your-team');
+const enemyTeam = document.getElementById('enemy-team');
 
 // Control buttons
 const attackBtn = document.getElementById('attack-btn');
 const defendBtn = document.getElementById('defend-btn');
 const skillBtn = document.getElementById('skill-btn');
 const ultimateBtn = document.getElementById('ultimate-btn');
-const manaBtn = document.getElementById('mana-btn');
-const surrenderBtn = document.getElementById('surrender-btn');
 
 // Initialize
 function init() {
@@ -858,11 +871,13 @@ function init() {
   defendBtn.addEventListener('click', () => sendMove('defend'));
   skillBtn.addEventListener('click', () => sendMove('skill'));
   ultimateBtn.addEventListener('click', () => sendMove('ultimate'));
-  manaBtn.addEventListener('click', () => sendMove('manaRestore'));
-  surrenderBtn.addEventListener('click', () => {
-    if (confirm('Are you sure you want to surrender?')) {
-      gameState.socket.disconnect();
-      resetGame();
+
+  // Team switching
+  yourTeam.addEventListener('click', (e) => {
+    const slot = e.target.closest('.team-slot');
+    if (slot && !slot.classList.contains('dead') && gameState.yourTurn) {
+      const index = parseInt(slot.dataset.index);
+      switchKryptomon(index);
     }
   });
 
@@ -874,6 +889,51 @@ function init() {
     walletStatus.textContent = 'MetaMask not detected. Guest mode available.';
     walletStatus.style.color = '#e74c3c';
   }
+}
+
+// Play sound effect
+function playSound(soundName) {
+  if (sounds[soundName]) {
+    sounds[soundName].currentTime = 0;
+    sounds[soundName].play().catch(e => console.log('Sound play failed:', e));
+  }
+}
+
+// Show damage text
+function showDamageText(target, amount, type = 'damage') {
+  const damageText = document.createElement('div');
+  damageText.className = `damage-text ${type}`;
+  
+  let prefix = '';
+  if (type === 'damage') prefix = '-';
+  else if (type === 'heal') prefix = '+';
+  else if (type === 'mana') prefix = '+';
+  else if (type === 'critical') prefix = 'CRIT -';
+  
+  damageText.textContent = prefix + amount;
+  
+  const rect = target.getBoundingClientRect();
+  damageText.style.position = 'fixed';
+  damageText.style.left = (rect.left + rect.width / 2) + 'px';
+  damageText.style.top = (rect.top + rect.height / 2) + 'px';
+  damageText.style.transform = 'translate(-50%, -50%)';
+  
+  document.body.appendChild(damageText);
+  
+  setTimeout(() => {
+    if (damageText.parentNode) {
+      damageText.parentNode.removeChild(damageText);
+    }
+  }, 2000);
+}
+
+// Switch Kryptomon
+function switchKryptomon(index) {
+  if (!gameState.socket || !gameState.inGame) return;
+  
+  gameState.socket.emit('requestTeamSwitch', {
+    kryptomonIndex: index
+  });
 }
 
 // MetaMask connection
@@ -1065,24 +1125,95 @@ function connectToServer() {
     updateUI(data.gameRoom);
   });
 
+  gameState.socket.on('timerUpdate', (data) => {
+    timer.textContent = `${data.timeLeft}s`;
+    if (data.timeLeft <= 5) {
+      timer.style.color = '#e74c3c';
+    } else {
+      timer.style.color = '#FFD700';
+    }
+  });
+
   gameState.socket.on('turnResult', (data) => {
     console.log('🎯 Turn result:', data);
     gameState.gameData = data.gameRoom;
-    updateUI(data.gameRoom);
     
-    // Show animations and effects
-    if (data.result) {
-      showBattleEffects(data.result);
+    const result = data.result;
+    
+    // Play sound effect
+    if (result.soundEffect) {
+      playSound(result.soundEffect);
     }
+    
+    // Show animations
+    if (result.playerIndex === gameState.yourIndex) {
+      // Your move
+      yourKryptomon.classList.add(result.moveType);
+      setTimeout(() => yourKryptomon.classList.remove(result.moveType), 
+        result.moveType === 'ultimate' ? 3000 : result.moveType === 'skill' ? 2000 : 1500);
+    } else {
+      // Enemy move
+      enemyKryptomon.classList.add(result.moveType);
+      setTimeout(() => enemyKryptomon.classList.remove(result.moveType), 
+        result.moveType === 'ultimate' ? 3000 : result.moveType === 'skill' ? 2000 : 1500);
+    }
+    
+    // Show damage/heal/mana text
+    if (result.damageInfo) {
+      const info = result.damageInfo;
+      let targetElement;
+      
+      if (info.target === 'self') {
+        targetElement = result.playerIndex === gameState.yourIndex ? yourKryptomon : enemyKryptomon;
+      } else {
+        targetElement = result.playerIndex === gameState.yourIndex ? enemyKryptomon : yourKryptomon;
+      }
+      
+      if (info.isHeal) {
+        showDamageText(targetElement, info.damage, 'heal');
+      } else if (info.isMana) {
+        showDamageText(targetElement, info.damage, 'mana');
+      } else if (info.isCritical) {
+        showDamageText(targetElement, info.damage, 'critical');
+      } else {
+        showDamageText(targetElement, info.damage, 'damage');
+      }
+    }
+    
+    // Add defend effect
+    if (result.moveType === 'defend') {
+      const defendEffect = document.createElement('div');
+      defendEffect.className = 'defend-effect';
+      const targetKryptomon = result.playerIndex === gameState.yourIndex ? yourKryptomon : enemyKryptomon;
+      targetKryptomon.appendChild(defendEffect);
+      setTimeout(() => {
+        if (defendEffect.parentNode) {
+          defendEffect.parentNode.removeChild(defendEffect);
+        }
+      }, 2000);
+    }
+    
+    updateUI(data.gameRoom);
+  });
+
+  gameState.socket.on('teamSwitched', (data) => {
+    console.log('🔄 Team switched:', data);
+    gameState.gameData = data.gameRoom;
+    updateUI(data.gameRoom);
+  });
+
+  gameState.socket.on('turnSkipped', (data) => {
+    console.log('⏭️ Turn skipped:', data);
+    gameState.gameData = data.gameRoom;
+    updateUI(data.gameRoom);
   });
 
   gameState.socket.on('gameEnd', (data) => {
     console.log('🏁 Game ended:', data);
     const isWinner = data.winner === gameState.yourIndex;
     
-    // Play victory sound
-    if (isWinner && sounds.victory) {
-      sounds.victory.play().catch(e => console.log('Sound play failed'));
+    if (isWinner) {
+      playSound('victory');
     }
     
     setTimeout(() => {
@@ -1095,61 +1226,6 @@ function connectToServer() {
     console.error('🚨 Game error:', error);
     alert('Error: ' + error.message);
   });
-}
-
-// Show battle effects
-function showBattleEffects(result) {
-  const { moveType, playerIndex } = result;
-  
-  // Play sound
-  if (sounds[moveType]) {
-    sounds[moveType].play().catch(e => console.log('Sound play failed'));
-  }
-  
-  // Show animation
-  const attacker = playerIndex === gameState.yourIndex ? yourKryptomon : enemyKryptomon;
-  const target = playerIndex === gameState.yourIndex ? enemyKryptomon : yourKryptomon;
-  
-  // Add animation class
-  attacker.classList.add(moveType);
-  setTimeout(() => attacker.classList.remove(moveType), moveType === 'ultimate' ? 3000 : moveType === 'skill' ? 2000 : 1500);
-  
-  // Show damage text if there are effects
-  if (result.effects) {
-    result.effects.forEach((effect, index) => {
-      setTimeout(() => {
-        if (effect.type === 'damage') {
-          showDamageText(target, effect.amount, effect.isCritical ? 'critical' : 'damage');
-        } else if (effect.type === 'heal') {
-          showDamageText(attacker, effect.amount, 'heal');
-        }
-      }, index * 300);
-    });
-  }
-}
-
-// Show damage text
-function showDamageText(element, amount, type) {
-  const damageText = document.createElement('div');
-  damageText.className = `damage-text ${type}`;
-  damageText.textContent = type === 'heal' ? `+${amount}` : type === 'critical' ? `CRITICAL! ${amount}` : `-${amount}`;
-  
-  // Position randomly around the element
-  const rect = element.getBoundingClientRect();
-  damageText.style.position = 'fixed';
-  damageText.style.left = (rect.left + rect.width/2 + (Math.random() - 0.5) * 60) + 'px';
-  damageText.style.top = (rect.top + rect.height/2 + (Math.random() - 0.5) * 40) + 'px';
-  damageText.style.pointerEvents = 'none';
-  damageText.style.zIndex = '1000';
-  
-  document.body.appendChild(damageText);
-  
-  // Remove after animation
-  setTimeout(() => {
-    if (damageText.parentNode) {
-      damageText.parentNode.removeChild(damageText);
-    }
-  }, 2000);
 }
 
 // Send move to server
@@ -1177,74 +1253,79 @@ function updateUI(gameRoom) {
   const yourData = gameRoom.players[gameState.yourIndex];
   const enemyData = gameRoom.players[1 - gameState.yourIndex];
   
-  console.log('🔄 Updating UI:', { yourData, enemyData });
-  
   // Update names
   yourName.textContent = yourData.username;
   enemyName.textContent = enemyData.username;
   
   // Get current Kryptomon
-  const yourKryptomon = yourData.team[yourData.currentKryptomon];
-  const enemyKryptomonData = enemyData.team[enemyData.currentKryptomon];
+  const yourCurrentKryptomon = yourData.team[yourData.currentKryptomon];
+  const enemyCurrentKryptomon = enemyData.team[enemyData.currentKryptomon];
   
-  if (yourKryptomon && enemyKryptomonData) {
+  if (yourCurrentKryptomon && enemyCurrentKryptomon) {
     // Update HP/MP displays
-    yourHp.textContent = yourKryptomon.hp;
-    yourMp.textContent = yourKryptomon.mana;
-    enemyHp.textContent = enemyKryptomonData.hp;
-    enemyMp.textContent = enemyKryptomonData.mana;
+    yourHp.textContent = yourCurrentKryptomon.hp;
+    yourMp.textContent = yourCurrentKryptomon.mana;
+    enemyHp.textContent = enemyCurrentKryptomon.hp;
+    enemyMp.textContent = enemyCurrentKryptomon.mana;
     
     // Update bars
-    yourHpBar.style.width = (yourKryptomon.hp / yourKryptomon.maxHp * 100) + '%';
-    yourMpBar.style.width = (yourKryptomon.mana / yourKryptomon.maxMana * 100) + '%';
-    enemyHpBar.style.width = (enemyKryptomonData.hp / enemyKryptomonData.maxHp * 100) + '%';
-    enemyMpBar.style.width = (enemyKryptomonData.mana / enemyKryptomonData.maxMana * 100) + '%';
+    yourHpBar.style.width = (yourCurrentKryptomon.hp / yourCurrentKryptomon.maxHp * 100) + '%';
+    yourMpBar.style.width = (yourCurrentKryptomon.mana / yourCurrentKryptomon.maxMana * 100) + '%';
+    enemyHpBar.style.width = (enemyCurrentKryptomon.hp / enemyCurrentKryptomon.maxHp * 100) + '%';
+    enemyMpBar.style.width = (enemyCurrentKryptomon.mana / enemyCurrentKryptomon.maxMana * 100) + '%';
     
     // Update Kryptomon images
-    const yourImg = document.querySelector('#your-kryptomon img');
-    const enemyImg = document.querySelector('#enemy-kryptomon img');
+    const yourImg = yourKryptomon.querySelector('img');
+    const enemyImg = enemyKryptomon.querySelector('img');
     
-    if (yourImg) yourImg.src = `kryptomon${yourKryptomon.id}.png`;
-    if (enemyImg) enemyImg.src = `kryptomon${enemyKryptomonData.id}.png`;
+    if (yourImg) {
+      yourImg.src = `kryptomon${yourCurrentKryptomon.sprite}.png`;
+    }
+    if (enemyImg) {
+      enemyImg.src = `kryptomon${enemyCurrentKryptomon.sprite}.png`;
+    }
   }
+  
+  // Update team displays
+  updateTeamDisplay(yourData, yourTeam, false);
+  updateTeamDisplay(enemyData, enemyTeam, true);
   
   // Update turn
   gameState.yourTurn = gameRoom.currentTurn === gameState.yourIndex;
   turnInfo.textContent = gameState.yourTurn ? 'Your Turn' : 'Enemy Turn';
   status.textContent = gameState.yourTurn ? 'Choose your move!' : 'Waiting for enemy...';
   
-  // Update team displays
-  updateTeamDisplay('your-team', yourData.team, yourData.currentKryptomon);
-  updateTeamDisplay('enemy-team', enemyData.team, enemyData.currentKryptomon);
+  // Update cooldowns
+  if (gameState.defendCooldown > 0) {
+    gameState.defendCooldown--;
+  }
+  if (gameState.defendTurnsLeft > 0) {
+    gameState.defendTurnsLeft--;
+  }
   
   // Update buttons
   updateButtons();
 }
 
 // Update team display
-function updateTeamDisplay(teamId, team, currentIndex) {
-  const teamElement = document.getElementById(teamId);
-  if (!teamElement) return;
-  
+function updateTeamDisplay(playerData, teamElement, isEnemy) {
   const slots = teamElement.querySelectorAll('.team-slot');
   
   slots.forEach((slot, index) => {
-    const kryptomon = team[index];
-    if (!kryptomon) return;
+    const kryptomon = playerData.team[index];
+    const img = slot.querySelector('img');
     
-    slot.classList.remove('active', 'dead');
-    
-    if (index === currentIndex) {
-      slot.classList.add('active');
+    if (img && kryptomon) {
+      img.src = `kryptomon${kryptomon.sprite}.png`;
     }
+    
+    // Update status
+    slot.classList.remove('active', 'dead');
     
     if (!kryptomon.isAlive) {
       slot.classList.add('dead');
-    }
-    
-    const img = slot.querySelector('img');
-    if (img) {
-      img.src = `kryptomon${kryptomon.id}.png`;
+    } else if (index === playerData.currentKryptomon) {
+      slot.classList.add('active');
     }
   });
 }
@@ -1253,24 +1334,33 @@ function updateTeamDisplay(teamId, team, currentIndex) {
 function updateButtons() {
   const disabled = !gameState.yourTurn || !gameState.inGame;
   
-  attackBtn.disabled = disabled;
-  defendBtn.disabled = disabled;
-  skillBtn.disabled = disabled;
-  ultimateBtn.disabled = disabled;
-  manaBtn.disabled = disabled;
-  surrenderBtn.disabled = !gameState.inGame;
-  
-  // Add mana checks
   if (gameState.gameData && gameState.yourIndex !== null) {
     const yourData = gameState.gameData.players[gameState.yourIndex];
     const currentKryptomon = yourData.team[yourData.currentKryptomon];
     
     if (currentKryptomon) {
-      attackBtn.disabled = disabled || currentKryptomon.mana < 10;
-      defendBtn.disabled = disabled || currentKryptomon.mana < 5;
-      skillBtn.disabled = disabled || currentKryptomon.mana < 20;
-      ultimateBtn.disabled = disabled || currentKryptomon.mana < 40 || currentKryptomon.ultimateUsed;
+      // Attack: always available when it's your turn
+      attackBtn.disabled = disabled;
+      
+      // Defend: free but has cooldown
+      defendBtn.disabled = disabled || gameState.defendCooldown > 0;
+      if (gameState.defendCooldown > 0) {
+        defendBtn.querySelector('small').textContent = `Cooldown: ${gameState.defendCooldown}`;
+      } else {
+        defendBtn.querySelector('small').textContent = 'Free';
+      }
+      
+      // Skill: costs 2 mana
+      skillBtn.disabled = disabled || currentKryptomon.mana < 2;
+      
+      // Ultimate: costs 6 mana and can only be used once
+      ultimateBtn.disabled = disabled || currentKryptomon.mana < 6 || currentKryptomon.ultimateUsed;
     }
+  } else {
+    attackBtn.disabled = disabled;
+    defendBtn.disabled = disabled;
+    skillBtn.disabled = disabled;
+    ultimateBtn.disabled = disabled;
   }
 }
 
@@ -1293,6 +1383,9 @@ function resetGame() {
   gameState.yourIndex = null;
   gameState.gameData = null;
   gameState.yourTurn = false;
+  gameState.defendTurnsLeft = 0;
+  gameState.defendCooldown = 0;
+  
   if (gameState.socket) {
     gameState.socket.disconnect();
     gameState.socket = null;
