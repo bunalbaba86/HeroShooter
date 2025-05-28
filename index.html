@@ -1105,8 +1105,27 @@ function startGame() {
 function connectToServer() {
   updateConnectionStatus('connecting');
   
-  // Aynı domain'i kullan (Vercel)
-  const serverUrl = window.location.origin;
+// Multi-region fallback
+const serverUrls = [
+  window.location.origin,           // Primary Vercel
+  'https://pvpbackend.onrender.com', // Fallback Render
+];
+
+function connectWithFallback(urlIndex = 0) {
+  if (urlIndex >= serverUrls.length) {
+    alert('All servers unavailable!');
+    return;
+  }
+  
+  const serverUrl = serverUrls[urlIndex];
+  console.log(`Trying server ${urlIndex + 1}:`, serverUrl);
+  
+  gameState.socket = io(serverUrl, { /* config */ });
+  
+  gameState.socket.on('connect_error', () => {
+    connectWithFallback(urlIndex + 1); // Try next server
+  });
+}
   console.log('🔌 Connecting to:', serverUrl);
   
   gameState.socket = io(serverUrl, {
