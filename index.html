@@ -6,6 +6,38 @@
 <title>Kryptomon Battle Arena</title>
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+ <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<script>
+// Telegram WebApp integration
+const tg = window.Telegram?.WebApp;
+
+if (tg) {
+  tg.ready();
+  tg.expand();
+  
+  // Get user info from Telegram
+  const user = tg.initDataUnsafe?.user;
+  if (user) {
+    gameState.playerName = user.first_name || user.username || 'Player';
+    gameState.telegramUserId = user.id;
+  }
+  
+  // Haptic feedback function
+  function hapticFeedback(type = 'medium') {
+    if (tg.HapticFeedback) {
+      tg.HapticFeedback.impactOccurred(type);
+    }
+  }
+  
+  // Show main button after game
+  function showMainButton(text, callback) {
+    tg.MainButton.text = text;
+    tg.MainButton.show();
+    tg.MainButton.onClick(callback);
+  }
+}
+</script>
 <style>
   * {
     margin: 0;
