@@ -396,6 +396,8 @@
     </div>
   </div>
 
+<!-- Aynı HTML, sadece script kısmını değiştir -->
+
 <script>
 console.log('🎮 Kryptomon Battle Arena Starting...');
 
@@ -447,12 +449,10 @@ const surrenderBtn = document.getElementById('surrender-btn');
 function init() {
   console.log('Initializing game...');
   
-  // Enable start button when name is entered
   playerNameInput.addEventListener('input', () => {
     startBtn.disabled = playerNameInput.value.trim().length < 2;
   });
 
-  // Start game button
   startBtn.addEventListener('click', () => {
     const name = playerNameInput.value.trim();
     if (name.length >= 2) {
@@ -461,7 +461,6 @@ function init() {
     }
   });
 
-  // Guest mode button
   guestBtn.addEventListener('click', () => {
     gameState.playerName = playerNameInput.value.trim() || `Guest_${Math.floor(Math.random() * 1000)}`;
     startGame();
@@ -475,7 +474,8 @@ function init() {
   manaBtn.addEventListener('click', () => sendMove('manaRestore'));
   surrenderBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to surrender?')) {
-      sendMove('surrender');
+      gameState.socket.disconnect();
+      resetGame();
     }
   });
 }
@@ -491,11 +491,7 @@ function startGame() {
 function connectToServer() {
   updateConnectionStatus('connecting');
   
-  // Use environment-based URL
-  const serverUrl = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
-    : 'https://pvpbackend.onrender.com';
-  
+  const serverUrl = 'https://pvpbackend.onrender.com';
   console.log('Connecting to:', serverUrl);
   
   gameState.socket = io(serverUrl, {
@@ -510,9 +506,9 @@ function connectToServer() {
     updateConnectionStatus('connected');
     
     // Join game immediately
+    console.log('🎯 Joining game with name:', gameState.playerName);
     gameState.socket.emit('joinGame', {
-      username: gameState.playerName,
-      isGuest: true
+      username: gameState.playerName
     });
   });
 
@@ -528,18 +524,16 @@ function connectToServer() {
     alert('Could not connect to server. Please try again.');
   });
 
-  // Game events
-  gameState.socket.on('waitingForOpponent', (data) => {
-    console.log('⏳ Waiting for opponent:', data);
+  gameState.socket.on('waitingForOpponent', () => {
+    console.log('⏳ Waiting for opponent...');
     document.getElementById('waiting-name').textContent = gameState.playerName;
+    document.querySelector('#waiting-screen h2').textContent = 'Finding Opponent...';
+    document.querySelector('#waiting-screen p:last-child').textContent = 'Please wait while we find you an opponent';
   });
 
   gameState.socket.on('gameStartCountdown', (data) => {
     console.log('⏰ Game starting in:', data.countdown);
-    document.getElementById('waiting-screen').innerHTML = `
-      <h2>Game Starting in ${data.countdown}...</h2>
-      <div class="spinner"></div>
-    `;
+    document.querySelector('#waiting-screen h2').textContent = `Game Starting in ${data.countdown}...`;
   });
 
   gameState.socket.on('gameStart', (data) => {
@@ -557,7 +551,7 @@ function connectToServer() {
     updateUI(data.gameRoom);
     
     // Show attack animation
-    if (data.result && data.result.moveType === 'attack') {
+    if (data.result && (data.result.moveType === 'attack' || data.result.moveType === 'skill' || data.result.moveType === 'ultimate')) {
       const attacker = data.result.playerIndex === gameState.yourIndex ? yourKryptomon : enemyKryptomon;
       attacker.classList.add('attacking');
       setTimeout(() => attacker.classList.remove('attacking'), 1000);
@@ -567,8 +561,10 @@ function connectToServer() {
   gameState.socket.on('gameEnd', (data) => {
     console.log('🏁 Game ended:', data);
     const isWinner = data.winner === gameState.yourIndex;
-    alert(isWinner ? '🎉 You Won!' : '😞 You Lost!');
-    resetGame();
+    setTimeout(() => {
+      alert(isWinner ? '🎉 You Won!' : '😞 You Lost!');
+      resetGame();
+    }, 1000);
   });
 
   gameState.socket.on('error', (error) => {
@@ -580,7 +576,11 @@ function connectToServer() {
 // Send move to server
 function sendMove(moveType) {
   if (!gameState.socket || !gameState.inGame || !gameState.yourTurn) {
-    console.log('Cannot send move:', gameState.socket, gameState.inGame, gameState.yourTurn);
+    console.log('❌ Cannot send move:', {
+      socket: !!gameState.socket,
+      inGame: gameState.inGame,
+      yourTurn: gameState.yourTurn
+    });
     return;
   }
 
@@ -590,10 +590,15 @@ function sendMove(moveType) {
 
 // Update UI
 function updateUI(gameRoom) {
-  if (!gameRoom || gameState.yourIndex === null) return;
+  if (!gameRoom || gameState.yourIndex === null) {
+    console.log('❌ Missing game data:', gameRoom, gameState.yourIndex);
+    return;
+  }
 
   const yourData = gameRoom.players[gameState.yourIndex];
   const enemyData = gameRoom.players[1 - gameState.yourIndex];
+  
+  console.log('🔄 Updating UI:', { yourData, enemyData });
   
   // Update names
   yourName.textContent = yourData.username;
@@ -637,7 +642,7 @@ function updateButtons() {
   manaBtn.disabled = disabled;
   surrenderBtn.disabled = !gameState.inGame;
   
-  // Add mana checks if we have current Kryptomon data
+  // Add mana checks
   if (gameState.gameData && gameState.yourIndex !== null) {
     const yourData = gameState.gameData.players[gameState.yourIndex];
     const currentKryptomon = yourData.team[yourData.currentKryptomon];
@@ -670,6 +675,10 @@ function resetGame() {
   gameState.yourIndex = null;
   gameState.gameData = null;
   gameState.yourTurn = false;
+  if (gameState.socket) {
+    gameState.socket.disconnect();
+    gameState.socket = null;
+  }
   showScreen(startScreen);
 }
 
